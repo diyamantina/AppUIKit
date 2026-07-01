@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# SlayerIDE pre-commit hook. Enforces the repository rules mechanically on every commit, so a
+# violation cannot enter history no matter what anyone remembers:
+#   1. SwiftFormat lint on staged Swift files (no unformatted code).
+#   2. SwiftLint strict on staged Swift files (warnings fail).
+#   3. The validation coverage gate (every public type validated or excluded).
+#   4. Style tells (em dash, AI attribution) on staged content, via pre-commit-style-check.
+#
+# Install per clone (hooks are not cloned):
+#   git config core.hooksPath .githooks
+#
+# Portable: avoids mapfile so it runs on the macOS system bash (3.2).
+
+set -uo pipefail
+
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(git rev-parse --show-toplevel)"
+fail=0
+
+# Staged Swift files (Added/Copied/Modified/Renamed; skip Deleted).
+STAGED_SWIFT="$(git diff --cached --name-only --diff-filter=ACMR -- '*.swift' || true)"
+
+if [ -n "$STAGED_SWIFT" ]; then
+  if command -v swiftformat >/dev/null 2>&1; then
+    if ! printf '%s\n' "$STAGED_SWIFT" | tr '\n' '\0' | xargs -0 swiftformat --lint --config "$ROOT/.swiftformat"; then
+      echo "pre-commit: SwiftFormat found unformatted code. Run: swiftformat . --config .swiftformat" >&2
+      fail=1
+    fi
+  else
+    echo "pre-commit: swiftformat not installed; cannot enforce formatting (Rules/formatting-and-linting.md)." >&2
+    fail=1
+  fi
+
+  if command -v swiftlint >/dev/null 2>&1; then
+    if ! printf '%s\n' "$STAGED_SWIFT" | tr '\n' '\0' | xargs -0 swiftlint lint --strict --config "$ROOT/.swiftlint.yml"; then
+      echo "pre-commit: SwiftLint (strict) failed." >&2
+      fail=1
+    fi
+  else
+    echo "pre-commit: swiftlint not installed; cannot enforce linting (Rules/formatting-and-linting.md)." >&2
+    fail=1
+  fi
+fi
+
+# Validation coverage gate (whole repo; no-ops cleanly when there is no Swift yet).
+if [ -x "$ROOT/scripts/check-validation-coverage.sh" ]; then
+  "$ROOT/scripts/check-validation-coverage.sh" || fail=1
+fi
+
+# Style tells on staged content (em dash, AI attribution, signature emojis).
+if [ -x "$HOOK_DIR/pre-commit-style-check" ]; then
+  "$HOOK_DIR/pre-commit-style-check" || fail=1
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "" >&2
+  echo "pre-commit: commit blocked. Fix the issues above, or (sparingly) git commit --no-verify." >&2
+fi
+exit $fail

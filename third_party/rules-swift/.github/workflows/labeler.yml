@@ -1,0 +1,29 @@
+name: issue-priority-labeler
+# git-discipline.md Rule 1.6 "Forms gotcha": dropdown selections are TEXT in the body,
+# they do not auto-apply as labels. This translates the Priority dropdown into the
+# `priority: high` label when, and only when, the chosen value is "high".
+on:
+  issues:
+    types: [opened, edited]
+permissions:
+  issues: write
+jobs:
+  apply-priority-label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || "";
+            // The form renders the dropdown under a "### Priority" heading; read the next non-empty line.
+            const m = body.match(/^###\s+Priority\s*$\n+([^\n]+)/m);
+            const value = m ? m[1].trim().toLowerCase() : "";
+            const label = "priority: high";
+            const has = (context.payload.issue.labels || []).some(l => l.name === label);
+            const owner = context.repo.owner, repo = context.repo.repo;
+            const issue_number = context.payload.issue.number;
+            if (value === "high" && !has) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [label] });
+            } else if (value !== "high" && has) {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number, name: label }).catch(() => {});
+            }

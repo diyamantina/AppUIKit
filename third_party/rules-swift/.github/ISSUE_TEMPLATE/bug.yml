@@ -1,0 +1,66 @@
+name: Bug
+description: A defect in the rules, a contradiction, a broken check, a phantom path, or a wrong claim.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report a defect in the rule set: a rule that contradicts another, an acceptance check that flags conforming code, a broken link, or a claim that does not match the repo.
+  - type: textarea
+    id: status
+    attributes:
+      label: Status (YYYY-MM-DD)
+      description: First line is today's date. Then one line on the current state. Edit this block in place as state changes; the rest of the body keeps its original framing.
+      placeholder: |
+        2026-06-26: filed, not started.
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: The value high means critical, release-gating, or actively blocking. Otherwise pick normal, since absence of high is the default.
+      options:
+        - high
+        - normal
+    validations:
+      required: true
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Complexity
+      description: A reader's estimate. This stays in the body; it is not a label.
+      options:
+        - small
+        - medium
+        - large
+    validations:
+      required: true
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Symptom
+      description: What goes wrong. Reference files by symbol or name, never by line number. Every backtick-quoted path must exist in the repo.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: What the rules should say or do instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduce
+      description: The exact command or steps that surface the defect, with the output they produce.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: The observable conditions, ideally a runnable command with a stated expected result, that prove the defect is fixed.
+    validations:
+      required: true

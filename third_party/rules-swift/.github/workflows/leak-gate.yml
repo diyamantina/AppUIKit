@@ -1,0 +1,15 @@
+name: gates
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the public-safe leak gate
+        run: sh scripts/leak-gate.sh
+      - name: Run the namespacing gate
+        run: sh scripts/check-namespacing.sh

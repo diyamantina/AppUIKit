@@ -1,0 +1,29 @@
+name: Swift (macOS)
+
+# Public repo: runs on GitHub-hosted macOS (free for public repos), NOT the
+# self-hosted mini — a fork PR must never execute on private hardware.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  swift-macos:
+    name: Swift (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Format and lint
+        run: |
+          command -v swiftformat >/dev/null 2>&1 || brew install swiftformat
+          command -v swiftlint >/dev/null 2>&1 || brew install swiftlint
+          swiftformat . --config .swiftformat --lint
+          swiftlint --config .swiftlint.yml --strict
+      - name: Build and test
+        run: |
+          swift build
+          swift test

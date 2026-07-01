@@ -1,0 +1,52 @@
+name: Feature or enhancement
+description: A new rule, a refactor of an existing one, or a design proposal.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        File a rule change that generalizes beyond a single project. See `core/self-improve.md` for the threshold a new rule must clear.
+  - type: textarea
+    id: status
+    attributes:
+      label: Status (YYYY-MM-DD)
+      description: First line is today's date. Then one line on the current state. Edit this block in place as state changes; the rest of the body keeps its original framing.
+      placeholder: |
+        2026-06-26: filed, not started.
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: The value high means critical, release-gating, or actively blocking. Otherwise pick normal, since absence of high is the default.
+      options:
+        - high
+        - normal
+    validations:
+      required: true
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Complexity
+      description: A reader's estimate. This stays in the body; it is not a label.
+      options:
+        - small
+        - medium
+        - large
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What the rule should make true, and why it generalizes. Reference files by symbol or name, never by line number.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: The observable conditions, ideally a runnable command with a stated expected result, that prove the change is done.
+    validations:
+      required: true

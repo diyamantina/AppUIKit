@@ -1,0 +1,26 @@
+name: Style and namespacing
+
+# Public repo: runs on GitHub-hosted ubuntu (free for public repos).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  style:
+    name: Style and namespacing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Style gate
+        run: bash scripts/check-style.sh
+      - name: Commit-message attribution gate
+        run: bash scripts/check-commit-attribution.sh
+      - name: Namespacing gate
+        run: bash scripts/check-namespacing.sh
