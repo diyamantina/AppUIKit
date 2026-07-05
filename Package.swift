@@ -11,6 +11,9 @@ let package = Package(
     products: [
         .library(name: "AppUIKit", targets: ["AppUIKit"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin", from: "1.4.3"),
+    ],
     targets: [
         .target(name: "AppUIKit"),
         .testTarget(name: "AppUIKitTests", dependencies: ["AppUIKit"]),

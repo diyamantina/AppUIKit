@@ -1,7 +1,7 @@
 name: Swift (macOS)
 
 # Public repo: runs on GitHub-hosted macOS (free for public repos), NOT the
-# self-hosted mini — a fork PR must never execute on private hardware.
+# self-hosted mini: a fork PR must never execute on private hardware.
 on:
   push:
     branches: [main]

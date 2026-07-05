@@ -399,10 +399,9 @@ public enum TooltipFormatter {
     /// Creates an RTL-aware directional tooltip.
     /// For example, "Swipe left to delete" becomes "Swipe right to delete" in RTL.
     /// - Parameters:
-    ///   - action: The action description.
+    ///   - leadingAction: What happens when swiping from the leading edge.
+    ///   - trailingAction: What happens when swiping from the trailing edge.
     ///   - direction: The current layout direction.
-    ///   - leadingAction: What happens when swiping from leading edge.
-    ///   - trailingAction: What happens when swiping from trailing edge.
     /// - Returns: The directionally-aware tooltip.
     public static func formatDirectional(
         leadingAction: String,

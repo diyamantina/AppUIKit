@@ -33,8 +33,8 @@ swift build --triple arm64-apple-ios17.0-simulator --sdk "$(xcrun --sdk iphonesi
 
 ## Rules
 
-This package follows the canonical Swift rules in
-[`rules-swift`](https://github.com/mihaelamj/rules-swift); see `CLAUDE.md`.
+This package follows the canonical `rules-swift` rule set, vendored in snapshot mode under
+`third_party/rules-swift`; see `AGENTS.md`.
 
 ## Code style
 

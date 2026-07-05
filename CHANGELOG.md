@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A DocC documentation catalog (`Sources/AppUIKit/AppUIKit.docc`) with a curated
+  landing page for the library, built via the Swift-DocC plugin
+  (`swift package generate-documentation`).
+
+### Changed
+
+- `LayoutDirectionManager`, `ConnectionPointCalculator`, and
+  `DirectionalSymbols` moved out of `AppUIKit.LayoutDirection.swift` into their
+  own files (one non-private type per file). No behavior change.
+- The rules-swift CI lane now runs the full strict gate as a required step; the
+  README and CONTRIBUTING rules sections point at the vendored
+  `third_party/rules-swift` snapshot.
+
 ## [0.1.9] - 2026-07-01
 
 ### Added

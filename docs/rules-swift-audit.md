@@ -1,36 +1,35 @@
 # rules-swift Audit
 
-Date: 2026-06-30
+Date: 2026-06-30. Rows re-verified 2026-07-05 after the conformance pass.
 
-This audit checks AppUIKit against the Swift rule set at
-<https://github.com/mihaelamj/rules-swift>, pinned in snapshot mode at
-`third_party/rules-swift` (commit `97dc70f`). It separates green gates from honest
-gaps. A row left at `Gap` or `Partial` keeps `scripts/check-rules-swift.sh` red,
-which is the intended behavior until the repo actually conforms.
+This audit checks AppUIKit against the `rules-swift` rule set, pinned in snapshot
+mode at `third_party/rules-swift` (commit `97dc70f`). It separates green gates from
+honest gaps. A row left at `Gap` or `Partial` keeps `scripts/check-rules-swift.sh`
+red, which is the intended behavior until the repo actually conforms.
 
 ## Current Verdict
 
 | Area | Status | Evidence |
 |---|---|---|
 | Corpus pin / coverage | Pass | `check-rules-corpus-coverage.sh` -> clean, 68 files, pinned via snapshot. |
-| Codified mechanical rules | Gap | `check-rules-swift.sh` is strict and exits non-zero while the Gap rows below remain. |
-| Local mechanical gates | Gap | `check-local-gate.sh` is gated by the strict rules gate. |
+| Codified mechanical rules | Pass | `check-rules-swift.sh` -> exit 0 ("rules-swift mechanical gate clean"). |
+| Local mechanical gates | Pass | `check-local-gate.sh` -> exit 0 (rules gate, style gate, `swift build`, `swift test`). |
 | Hook installation | Pass | `install-hooks.sh` sets `core.hooksPath=.githooks`; commit-msg self-test (em dash) rejected. |
-| Namespacing | Gap | `check-namespacing.sh` reports 3 file-scope types in `Sources/AppUIKit/AppUIKit.LayoutDirection.swift` (pre-existing; source left untouched per file ownership). |
-| Formatting (SwiftFormat) | Pass | `swiftformat . --config .swiftformat --lint` -> 0/20 files require formatting. |
+| Namespacing | Pass | `check-namespacing.sh` -> exit 0. The 3 file-scope types formerly in `AppUIKit.LayoutDirection.swift` now live one per file (`LayoutDirectionManager.swift`, `ConnectionPointCalculator.swift`, `DirectionalSymbols.swift`), no behavior change. |
+| Formatting (SwiftFormat) | Pass | `swiftformat . --config .swiftformat --lint` -> 0/23 files require formatting. |
 | Linting (SwiftLint) | Pass | `swiftlint --config .swiftlint.yml` -> no violations. |
-| Style gate (em dash / attribution) | Gap | `check-style.sh` flags a pre-existing em dash in `.github/workflows/swift-macos.yml` (CI workflow; owner scrub). |
-| Public-safe leak gate | Gap | `leak-gate.sh` flags pre-existing vendor-name references to `CLAUDE.md` in `README.md`, `CONTRIBUTING.md`, `CLAUDE.md`, and a `/Volumes` path in `CLAUDE.md` (owner files; scrub deferred). |
+| Style gate (em dash / attribution) | Pass | `check-style.sh` -> exit 0; the em dash in `.github/workflows/swift-macos.yml` reworded with a colon. |
+| Public-safe leak gate | Pass | `leak-gate.sh` -> exit 0. The session loader now cites the vendored `third_party/rules-swift` snapshot (no machine-absolute path) and the per-machine table via the user-global rules loader; `README.md`, `CONTRIBUTING.md`, and `docs/definition-of-done.md` no longer name the loader file. |
 | Build | Pass | `swift build` -> Build complete. |
-| Tests | Not re-run | Suite not re-run during migration; run via the repo's own gate. |
+| Tests | Pass | `swift test` -> 10 tests in 1 suite passed. |
 | Framework policy | Pass | Banned non-Apple-stack scan over owned Swift/Markdown -> clean. |
 | Concurrency and shortcuts | Pass | No `@unchecked Sendable`, `nonisolated(unsafe)`, `try?`, `catch {}`, `sleep(`, `XCTSkip`, or `swiftlint:disable` in `Sources/`/`Tests/`. |
 | Test-target pairing | Pass | `AppUIKit` has matching `AppUIKitTests` (`package-architecture.md`). |
 | Validation coverage gate | Not applicable | No validation layer; this is a UI abstraction shim, not a parsing/validation surface. |
 | Pre-UI layer | Not applicable | Verified by module inspection: single-module UIKit/AppKit component (renderer) package with no framework-free model tier to confine, so the import-confinement gate (`ui/pre-ui-layer.md` point 5) does not apply. |
-| DocC documentation | Gap | No `.docc` catalog under `Sources/` (`documentation.md`). |
+| DocC documentation | Pass | `Sources/AppUIKit/AppUIKit.docc` curated catalog; `swift package generate-documentation` (Swift-DocC plugin 1.4.3+) builds with no documentation warnings. |
 | Multi-renderer UI proof | Not applicable | Single UIKit/AppKit abstraction shim, not a multi-backend renderer. |
-| Public CI backstop | Gap | `.github/workflows` exist but are not wired to these gates; deferred to the CI phase. |
+| Public CI backstop | Pass | Workflows invoke the gates: `style.yml` runs `check-style.sh`, `check-commit-attribution.sh`, `check-namespacing.sh`; `rules-swift.yml` runs the corpus pin plus the full strict gate as required steps; `swift-macos.yml` runs format, lint, build, test. |
 
 ## Public Corpus Coverage
 
@@ -136,31 +135,36 @@ rule is fully satisfied; it means no public rule source can be silently omitted.
 | `core/no-shortcuts-first-principles.md` | Yes | Pass | No shortcut patterns in `Sources/`/`Tests/`. |
 | `concurrency.md` | Yes | Pass | No concurrency escape hatches in owned code. |
 | `framework-policy.md` | Yes | Pass | Banned-stack scan clean over owned files. |
-| `code-style.md` (namespacing) | Yes | Gap | 3 file-scope types in `AppUIKit.LayoutDirection.swift` (owner decision). |
+| `code-style.md` (namespacing) | Yes | Pass | One non-private type per file; `check-namespacing.sh` clean after the LayoutDirection split. |
 | `formatting-and-linting.md` | Yes | Pass | SwiftFormat lint clean; SwiftLint clean. |
 | `package-architecture.md` | Yes | Pass | `AppUIKit` paired with `AppUIKitTests`. |
-| `documentation.md` (DocC) | Yes | Gap | No `.docc` catalog. |
-| `core/git-discipline.md` (style/leak) | Yes | Gap | Pre-existing em dash in CI workflow; vendor-name and `/Volumes` references in owner docs. |
+| `documentation.md` (DocC) | Yes | Pass | Curated `AppUIKit.docc` catalog; documentation build warning-free. |
+| `core/git-discipline.md` (style/leak) | Yes | Pass | `check-style.sh` and `leak-gate.sh` both exit 0 after the workflow and docs scrub. |
 | `validation-rules.md` | No | Not applicable | No validation layer. |
 | `ui/pre-ui-layer.md` | No | Not applicable | Renderer-layer component package; no model tier to keep display-free (verified by module inspection). |
 | `ui/three-renderers.md` | No | Not applicable | Single UIKit/AppKit shim. |
 
-## Required Remediation
+## Remediation Record
 
-Ordered by how much they unblock the gate:
+All five items from the original remediation list are done (2026-07-05):
 
-1. Split or privatize the extra file-scope types in
-   `Sources/AppUIKit/AppUIKit.LayoutDirection.swift` so `check-namespacing.sh`
-   goes green (owner decision; source untouched in this migration).
-2. Scrub the pre-existing em dash in `.github/workflows/swift-macos.yml`.
-3. Scrub the public-leak hits: the `CLAUDE.md` vendor-name references in
-   `README.md`, `CONTRIBUTING.md`, and `CLAUDE.md`, and the `/Volumes` path in
-   `CLAUDE.md` (owner files).
-4. Add a `.docc` documentation catalog under `Sources/AppUIKit`.
-5. CI backstop: wire the local gates into `.github/workflows`; deferred to the
-   CI phase.
+1. The extra file-scope types moved out of
+   `Sources/AppUIKit/AppUIKit.LayoutDirection.swift` into
+   `LayoutDirectionManager.swift`, `ConnectionPointCalculator.swift`, and
+   `DirectionalSymbols.swift`; `check-namespacing.sh` is green and the suite
+   still passes (10 tests in 1 suite).
+2. The em dash in `.github/workflows/swift-macos.yml` reworded with a colon.
+3. The public-leak hits scrubbed: the session loader cites the vendored
+   `third_party/rules-swift` snapshot instead of a machine-absolute path and
+   refers to the user-global rules loader generically; `README.md`,
+   `CONTRIBUTING.md`, and `docs/definition-of-done.md` describe the rules via
+   `AGENTS.md` and the vendored snapshot.
+4. A curated `.docc` catalog added under `Sources/AppUIKit` with the
+   Swift-DocC plugin dependency; the documentation build is warning-free.
+5. CI backstop: the workflows run the gates directly, and the full strict
+   rules gate is a required step in `rules-swift.yml` (it installs hooks first
+   because the gate verifies `core.hooksPath`).
 
-Until those items are complete, the honest status is: AppUIKit has strict rule
-enforcement wired in (snapshot pin at `97dc70f`, green corpus/format/lint/build/
-framework/concurrency/test-pairing gates), and that enforcement correctly fails
-while the repo does not yet fully conform to the entire `rules-swift` corpus.
+The honest status is: AppUIKit conforms to the applicable `rules-swift` corpus
+(snapshot pin at `97dc70f`) and `scripts/check-rules-swift.sh` exits 0. The gate
+stays strict, so any future regression flips it red again.

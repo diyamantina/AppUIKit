@@ -2,10 +2,9 @@ name: rules-swift gate
 
 # Runs the codified rules-swift gates on every pull request. The corpus-pin
 # integrity check must stay green (it fails if the vendored canon drifts from its
-# pinned commit). The full strict gate runs in report mode (continue-on-error)
-# because it is intentionally red on a repo's pre-existing gaps, recorded in
-# docs/rules-swift-audit.md; flip it to required (remove continue-on-error, or add
-# branch protection) once the repo reaches conformance.
+# pinned commit). The full strict gate is required: the repo reached conformance
+# (docs/rules-swift-audit.md carries no blocker rows), so a regression must fail
+# the lane, not merely report.
 on:
   pull_request:
   workflow_dispatch:
@@ -22,6 +21,8 @@ jobs:
       - name: Corpus pin integrity (required)
         run: sh scripts/check-rules-corpus-coverage.sh
 
-      - name: Full rules gate (reports pre-existing gaps; non-blocking)
+      - name: Install hooks (the rules gate verifies core.hooksPath)
+        run: sh scripts/install-hooks.sh
+
+      - name: Full rules gate (required)
         run: sh scripts/check-rules-swift.sh
-        continue-on-error: true

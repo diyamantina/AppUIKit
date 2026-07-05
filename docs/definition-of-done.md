@@ -11,7 +11,7 @@ The cross-framework namespace layer for imperative AppKit and UIKit code: one se
 - **Suite green** (10/1, clean build); dependency-free as chartered.
 - **Style gate red**: an em dash inside `.github/workflows/swift-macos.yml`, a dead workflow file flagging its own corpse.
 - **Namespacing gate red**: 3 file-scope types in `AppUIKit.LayoutDirection.swift`.
-- **Leak gate red**: dead `github.com/mihaelamj/rules-swift` links in CONTRIBUTING.md and README.md; CLAUDE.md's `~/.claude` reference.
+- **Leak gate red**: dead `github.com/mihaelamj/rules-swift` links in CONTRIBUTING.md and README.md; the session loader's user-global rules reference.
 - **Hooks uninstalled**; rules-corpus green; CI is the Gitea rules-freshness lane only.
 - **The tags question lives here.** SuperSplit's manifest used to require `from: 0.1.9` of this package; the 0.1.x tags did not survive the migration and exist nowhere. The owner decision (re-tag on the forge versus floating-main policy) is registered as SlayerMotionHQ/SuperSplit#2 and this repo executes whichever verdict lands.
 

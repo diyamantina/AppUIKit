@@ -3,12 +3,10 @@
 //
 // Cross-platform RTL (Right-to-Left) layout support utilities.
 // Provides unified API for handling layout direction in AppKit and UIKit.
+// Detection lives in LayoutDirectionManager; node-connection math in
+// ConnectionPointCalculator; direction-aware SF Symbols in DirectionalSymbols.
 
 import Foundation
-
-#if canImport(AppKit) && !targetEnvironment(macCatalyst)
-#elseif canImport(UIKit)
-#endif
 
 // MARK: - Layout Direction
 
@@ -37,70 +35,6 @@ public extension AppUIKit {
 
 /// Backwards compatibility alias
 public typealias LayoutDirection = AppUIKit.LayoutDirection
-
-// MARK: - Layout Direction Detection
-
-/// Utilities for detecting and working with layout direction.
-@MainActor
-public enum LayoutDirectionManager {
-    /// Returns the current application layout direction based on the user's locale.
-    public static var currentDirection: LayoutDirection {
-        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
-            return NSApp?.userInterfaceLayoutDirection == .rightToLeft ? .rightToLeft : .leftToRight
-        #elseif canImport(UIKit)
-            return UIApplication.shared.userInterfaceLayoutDirection == .rightToLeft ? .rightToLeft : .leftToRight
-        #endif
-    }
-
-    /// Returns true if the current layout direction is RTL.
-    public static var isRTL: Bool {
-        currentDirection.isRTL
-    }
-
-    /// Returns true if the current layout direction is LTR.
-    public static var isLTR: Bool {
-        currentDirection.isLTR
-    }
-
-    // Returns the layout direction for a specific view.
-    #if canImport(AppKit) && !targetEnvironment(macCatalyst)
-        public static func direction(for view: NSView) -> LayoutDirection {
-            view.userInterfaceLayoutDirection == .rightToLeft ? .rightToLeft : .leftToRight
-        }
-
-    #elseif canImport(UIKit)
-        public static func direction(for view: UIView) -> LayoutDirection {
-            UIView.userInterfaceLayoutDirection(for: view.semanticContentAttribute) == .rightToLeft ? .rightToLeft : .leftToRight
-        }
-    #endif
-
-    /// Returns the layout direction for the given locale (thread-safe, no MainActor required).
-    public nonisolated static func direction(for locale: Locale) -> LayoutDirection {
-        guard let languageCode = locale.language.languageCode?.identifier else {
-            return .leftToRight
-        }
-        return Locale.Language(identifier: languageCode).characterDirection == .rightToLeft ? .rightToLeft : .leftToRight
-    }
-
-    /// Returns true if the given language code is RTL (thread-safe, no MainActor required).
-    public nonisolated static func isRTL(languageCode: String) -> Bool {
-        // Common RTL language codes
-        let rtlLanguages: Set = [
-            "ar", // Arabic
-            "he", // Hebrew
-            "fa", // Farsi/Persian
-            "ur", // Urdu
-            "yi", // Yiddish
-            "ps", // Pashto
-            "sd", // Sindhi
-            "ug", // Uyghur
-            "ku", // Kurdish (Arabic script)
-            "dv", // Divehi
-            "ckb", // Central Kurdish
-        ]
-        return rtlLanguages.contains(languageCode.lowercased())
-    }
-}
 
 // MARK: - Platform View Extensions
 
@@ -262,67 +196,6 @@ public extension LayoutDirection {
     #endif
 }
 
-// MARK: - Connection Point Utilities
-
-/// Utilities for calculating connection points in node-based UIs.
-/// These properly handle RTL by using semantic "leading" and "trailing" concepts.
-public struct ConnectionPointCalculator {
-    public let layoutDirection: LayoutDirection
-
-    /// Creates a calculator with the specified layout direction.
-    /// Use `LayoutDirectionManager.currentDirection` from a MainActor context to get the current direction.
-    public init(layoutDirection: LayoutDirection = .leftToRight) {
-        self.layoutDirection = layoutDirection
-    }
-
-    /// Creates a calculator using the current application layout direction.
-    /// Must be called from MainActor context.
-    @MainActor
-    public static func current() -> ConnectionPointCalculator {
-        ConnectionPointCalculator(layoutDirection: LayoutDirectionManager.currentDirection)
-    }
-
-    /// Returns the output connection point for a node (trailing edge, vertically centered).
-    /// In LTR this is the right edge, in RTL this is the left edge.
-    public func outputPoint(for frame: CGRect) -> CGPoint {
-        CGPoint(
-            x: layoutDirection.trailingX(of: frame),
-            y: frame.midY
-        )
-    }
-
-    /// Returns the input connection point for a node (leading edge, vertically centered).
-    /// In LTR this is the left edge, in RTL this is the right edge.
-    public func inputPoint(for frame: CGRect) -> CGPoint {
-        CGPoint(
-            x: layoutDirection.leadingX(of: frame),
-            y: frame.midY
-        )
-    }
-
-    /// Returns control points for a bezier curve connecting two nodes.
-    /// The curve properly handles RTL by flowing in the correct direction.
-    public func bezierControlPoints(from startPoint: CGPoint, to endPoint: CGPoint) -> (cp1: CGPoint, cp2: CGPoint) {
-        let deltaX = abs(endPoint.x - startPoint.x)
-        let controlOffset = max(deltaX * 0.5, 50)
-
-        let cp1: CGPoint
-        let cp2: CGPoint
-
-        if layoutDirection.isRTL {
-            // In RTL, connections flow right-to-left
-            cp1 = CGPoint(x: startPoint.x - controlOffset, y: startPoint.y)
-            cp2 = CGPoint(x: endPoint.x + controlOffset, y: endPoint.y)
-        } else {
-            // In LTR, connections flow left-to-right
-            cp1 = CGPoint(x: startPoint.x + controlOffset, y: startPoint.y)
-            cp2 = CGPoint(x: endPoint.x - controlOffset, y: endPoint.y)
-        }
-
-        return (cp1, cp2)
-    }
-}
-
 // MARK: - Image Flipping
 
 #if canImport(AppKit) && !targetEnvironment(macCatalyst)
@@ -368,58 +241,3 @@ public struct ConnectionPointCalculator {
         }
     }
 #endif
-
-// MARK: - SF Symbols RTL Support
-
-/// Helpers for SF Symbols that need special RTL handling.
-public enum DirectionalSymbols {
-    /// Returns the appropriate SF Symbol name for a "forward" action.
-    /// In LTR this points right, in RTL this points left.
-    public static func forwardArrow(for direction: LayoutDirection) -> String {
-        direction.isRTL ? "arrow.left" : "arrow.right"
-    }
-
-    /// Returns the appropriate SF Symbol name for a "backward" action.
-    public static func backwardArrow(for direction: LayoutDirection) -> String {
-        direction.isRTL ? "arrow.right" : "arrow.left"
-    }
-
-    /// Returns the appropriate SF Symbol name for "next" navigation.
-    public static func nextChevron(for direction: LayoutDirection) -> String {
-        direction.isRTL ? "chevron.left" : "chevron.right"
-    }
-
-    /// Returns the appropriate SF Symbol name for "previous" navigation.
-    public static func previousChevron(for direction: LayoutDirection) -> String {
-        direction.isRTL ? "chevron.right" : "chevron.left"
-    }
-
-    /// Returns the appropriate SF Symbol name for "expand" disclosure.
-    public static func disclosureIndicator(for direction: LayoutDirection) -> String {
-        direction.isRTL ? "chevron.left" : "chevron.right"
-    }
-
-    /// Returns the appropriate SF Symbol name for text alignment "leading".
-    public static func alignLeading(for direction: LayoutDirection) -> String {
-        direction.isRTL ? "text.alignright" : "text.alignleft"
-    }
-
-    /// Returns the appropriate SF Symbol name for text alignment "trailing".
-    public static func alignTrailing(for direction: LayoutDirection) -> String {
-        direction.isRTL ? "text.alignleft" : "text.alignright"
-    }
-
-    /// Symbols that should NEVER flip (playback, spatial meaning).
-    public static let nonFlippingSymbols: Set<String> = [
-        "play.fill",
-        "pause.fill",
-        "stop.fill",
-        "backward.fill",
-        "forward.fill",
-        "gobackward",
-        "goforward",
-        "speaker.wave.1",
-        "speaker.wave.2",
-        "speaker.wave.3",
-    ]
-}
