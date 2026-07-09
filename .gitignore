@@ -10,3 +10,4 @@ DerivedData/
 .claude/
 *.xcuserstate
 *.hmap
+Package.resolved
