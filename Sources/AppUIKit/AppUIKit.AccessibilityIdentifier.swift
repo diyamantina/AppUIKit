@@ -18,4 +18,17 @@ public extension AppUIView {
             accessibilityIdentifier = identifier
         #endif
     }
+
+    /// Set the accessibility label uniformly across AppKit and UIKit.
+    ///
+    /// AppKit exposes `NSView.setAccessibilityLabel(_:)`; UIKit exposes the
+    /// `UIView.accessibilityLabel` property. This wraps both so views can apply
+    /// shared accessibility labels without `#if` at the call site.
+    func setAXLabel(_ label: String) {
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            setAccessibilityLabel(label)
+        #elseif canImport(UIKit)
+            accessibilityLabel = label
+        #endif
+    }
 }
