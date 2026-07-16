@@ -11,6 +11,33 @@
 # Override RULES_SWIFT_DIR to audit against a live local checkout during dev.
 set -eu
 
+# Resolve TMPDIR to the mounted external volume with the most free space, per the
+# fleet-wide Scratch & Build Storage Policy; fall back to internal with a warning
+# if none is mounted. Respects a TMPDIR the caller already exported.
+if [ -z "${TMPDIR:-}" ]; then
+    ext_dir=""
+    ext_free=0
+    for vol in /Volumes/*/; do
+        [ -d "$vol" ] || continue
+        name=$(basename "$vol")
+        [ "$name" = "Macintosh HD" ] && continue
+        free=$(df -k "$vol" 2>/dev/null | awk 'NR==2{print $4}')
+        case "$free" in ''|*[!0-9]*) continue ;; esac
+        if [ "$free" -gt "$ext_free" ]; then
+            ext_dir=$vol
+            ext_free=$free
+        fi
+    done
+    if [ -n "$ext_dir" ]; then
+        TMPDIR="${ext_dir}scratch/tmp"
+    else
+        echo "warning: no external volume mounted, scratch temp files will use the internal drive" >&2
+        TMPDIR="/tmp"
+    fi
+    mkdir -p "$TMPDIR"
+    export TMPDIR
+fi
+
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
 
@@ -41,7 +68,7 @@ else
         esac
     elif [ -f "$MANIFEST" ]; then
         pin_mode="snapshot"
-        actual=$(mktemp "${TMPDIR:-/tmp}/rules-swift-corpus.XXXXXX")
+        actual=$(mktemp "$TMPDIR/rules-swift-corpus.XXXXXX")
         (
             cd "$RULES_SWIFT_DIR"
             find . -type f \( -name '*.md' -o -name '*.sh' \) -not -path '*/.git/*' -print0 \
