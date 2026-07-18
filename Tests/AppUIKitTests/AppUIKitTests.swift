@@ -67,6 +67,33 @@ struct AppUIKitTests {
         #expect(AppUIKit.Pasteboard.paste() == text)
     }
 
+    /// The regression this guards: `deltaX * 0.5` first in `max` leaks NaN through (Swift's
+    /// `max`/`min` both return their first argument on a failed NaN comparison, and every
+    /// comparison with NaN fails). An infinite endpoint -- reachable via `abs(.infinity -
+    /// .infinity)`, itself NaN, from a node-graph document whose stored frame carries an
+    /// infinity -- poisoned `controlOffset` and both bezier control points with it.
+    @Test func `bezier control points clamp instead of leaking NaN from an infinite endpoint`() {
+        let calculator = ConnectionPointCalculator(layoutDirection: .leftToRight)
+        let points = calculator.bezierControlPoints(
+            from: CGPoint(x: CGFloat.infinity, y: 0),
+            to: CGPoint(x: CGFloat.infinity, y: 0)
+        )
+        #expect(!points.cp1.x.isNaN && !points.cp2.x.isNaN)
+    }
+
+    #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+        /// The regression this guards: `NSImage(size: .zero).lockFocus()` raises an uncaught
+        /// `NSImageCacheException` ("because it is size zero") that terminates the process. A
+        /// zero-size `NSImage` is easy to reach from externally-authored data (the default
+        /// `NSImage()` init, or a malformed image file whose decoded representation is
+        /// degenerate), and this API is public and generic over any `NSImage`.
+        @Test func `flipping a zero-size image does not crash`() {
+            let empty = NSImage(size: .zero)
+            let flipped = empty.flippedHorizontally()
+            #expect(flipped === empty)
+        }
+    #endif
+
     #if canImport(SwiftUI)
         @Test func `the SwiftUI view representable alias can be conformed to`() {
             _ = RepresentableProbe()

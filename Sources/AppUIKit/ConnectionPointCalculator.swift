@@ -46,7 +46,13 @@ public struct ConnectionPointCalculator {
     /// The curve properly handles RTL by flowing in the correct direction.
     public func bezierControlPoints(from startPoint: CGPoint, to endPoint: CGPoint) -> (cp1: CGPoint, cp2: CGPoint) {
         let deltaX = abs(endPoint.x - startPoint.x)
-        let controlOffset = max(deltaX * 0.5, 50)
+        // `max(deltaX * 0.5, 50)` leaks NaN through: Swift's `max` returns its FIRST argument
+        // when a comparison against it fails, and every comparison with NaN fails, so
+        // `max(nan, 50)` stays NaN while `max(50, nan)` clamps to 50. A node-graph document
+        // whose stored frames carry an infinity (e.g. `abs(.infinity - .infinity)`) poisons
+        // `deltaX` and, through this ordering, `controlOffset` too. Putting the finite floor
+        // first clamps it instead.
+        let controlOffset = max(50, deltaX * 0.5)
 
         let cp1: CGPoint
         let cp2: CGPoint

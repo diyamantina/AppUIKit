@@ -202,6 +202,19 @@ public extension LayoutDirection {
     public extension NSImage {
         /// Returns a horizontally flipped copy of the image for RTL support.
         func flippedHorizontally() -> NSImage {
+            // `lockFocus()` raises an uncaught `NSImageCacheException` ("because it is size
+            // zero") for a zero-size image -- easy to reach from an externally-authored image
+            // (the default `NSImage()` init, or any file whose decoded representation is
+            // degenerate) since this API is public and generic over any `NSImage`, not just
+            // app-bundled icons. A non-finite or negative size hits the same failure. Falling
+            // back to the un-flipped original mirrors the UIKit twin's `guard let cgImage else
+            // { return self }` early return for its own degenerate-input case. The upper bound
+            // guards the same allocation `lockFocus` would otherwise materialize unconditionally
+            // for a hostile image declaring an enormous point size; no real UI icon needs one.
+            guard size.width.isFinite, size.height.isFinite,
+                  size.width > 0, size.height > 0,
+                  size.width <= 20000, size.height <= 20000
+            else { return self }
             let flipped = NSImage(size: size)
             flipped.lockFocus()
 
