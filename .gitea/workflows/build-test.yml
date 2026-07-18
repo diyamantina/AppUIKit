@@ -1,0 +1,25 @@
+# The push lane: the repo's own gates plus the full suite on the family runner.
+# The scheduled cross-family canary lives in PureConformance (top of the graph,
+# its differential suite exercises every sibling), so this lane runs on push and
+# manual dispatch only. Linux, Windows, and wasm lanes are disclosed as pending:
+# no runner with those capabilities is registered yet.
+name: ci
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  suite:
+    runs-on: macos
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authorize private sibling resolution
+        run: |
+          TOKEN="${DEPS_TOKEN:-$GITHUB_TOKEN}"
+          git config --global url."https://oauth2:${TOKEN}@git.aleahim.com/".insteadOf "https://git.aleahim.com/"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPS_TOKEN: ${{ secrets.DEPS_TOKEN }}
+      - name: Style gate
+        run: bash scripts/check-style.sh
+      - name: Build and test
+        run: swift test
