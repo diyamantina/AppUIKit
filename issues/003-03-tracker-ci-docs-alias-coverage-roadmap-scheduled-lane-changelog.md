@@ -4,6 +4,12 @@
 - Created: 2026-07-03T08:55:40Z
 - URL: https://git.aleahim.com/SlayerMotionHQ/AppUIKit/issues/3
 
+## Status (2026-07-26)
+
+OPEN, PARTIAL. The live tracker is seeded, `.gitea/workflows/build-test.yml` exists, and `CHANGELOG.md` reflects the shipped documentation/rules state. No alias-coverage roadmap was found, and the workflow has push/manual triggers only while delegating the scheduled canary to PureConformance. The roadmap and scheduled-lane acceptance remain.
+
+---
+
 ## Status (2026-07-16)
 Open; not independently re-verified this pass.
 
