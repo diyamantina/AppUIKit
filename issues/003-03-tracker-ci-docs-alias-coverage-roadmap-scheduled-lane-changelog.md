@@ -2,7 +2,12 @@
 
 - State: open
 - Created: 2026-07-03T08:55:40Z
+- Labels: enhancement
 - URL: https://git.aleahim.com/SlayerMotionHQ/AppUIKit/issues/3
+
+## Status (2026-07-27)
+
+Still open, partially done, matching the prior 2026-07-26 status block with no change since. `.gitea/workflows/build-test.yml` (added in 338c985) covers the CI-lane portion but only triggers on push/manual dispatch, deliberately delegating the scheduled canary to PureConformance per its own header comment, so the "scheduled lane" acceptance leaf is not literally met in this repo. `grep -rn -i alias-coverage --include=*.md .` turns up no roadmap document anywhere in the tree, only restatements of the requirement itself in docs/definition-of-done.md and issues/003-*.md. CHANGELOG.md is current. Two of three acceptance items remain unmet.
 
 ## Status (2026-07-26)
 

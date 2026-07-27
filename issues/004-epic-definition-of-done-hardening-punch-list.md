@@ -2,7 +2,12 @@
 
 - State: open
 - Created: 2026-07-03T08:55:41Z
+- Labels: epic
 - URL: https://git.aleahim.com/SlayerMotionHQ/AppUIKit/issues/4
+
+## Status (2026-07-27)
+
+Still open. This epic tracks issues #1-#3 as its punch list; #1 is closed (four gates green), but #2 (re-tag/floating-main decision, blocked on the still-open SlayerMotionHQ/SuperSplit#2) and #3 (alias-coverage roadmap + scheduled CI lane, partially done per its own 2026-07-26 status) remain open. The epic cannot close until both sub-issues do.
 
 ## Status (2026-07-16)
 Open; not independently re-verified this pass.

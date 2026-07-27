@@ -2,7 +2,12 @@
 
 - State: open
 - Created: 2026-07-03T08:55:40Z
+- Labels: bug
 - URL: https://git.aleahim.com/SlayerMotionHQ/AppUIKit/issues/2
+
+## Status (2026-07-27)
+
+Still open, unresolved. `git tag -l` in this repo returns no tags, so the `from: "0.1.9"` requirement in README.md cannot resolve; the only mitigation in place is SuperSplit's `Package.swift` floating on `branch: "main"` (line 25), which is a workaround, not the acceptance-criteria decision. The gating decision issue, SlayerMotionHQ/SuperSplit#2, is itself still open, so neither branch of the acceptance (re-tag and go versioned, or write down floating-main as policy) has landed. No commit or doc change satisfies this issue's acceptance criteria yet.
 
 ## Status (2026-07-16)
 Open; not independently re-verified this pass.
