@@ -72,7 +72,7 @@ else
         (
             cd "$RULES_SWIFT_DIR"
             find . -type f \( -name '*.md' -o -name '*.sh' \) -not -path '*/.git/*' -print0 \
-                | sort -z \
+                | LC_ALL=C sort -fz \
                 | xargs -0 shasum -a 256 \
                 | sed 's|  ./|  |'
         ) > "$actual"
