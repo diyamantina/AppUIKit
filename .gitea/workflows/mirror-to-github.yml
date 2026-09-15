@@ -2,6 +2,10 @@
 # for Swift Package Index visibility. CLAUDE.md and AGENTS.md stay tracked
 # normally here; this job strips them only from the copy that reaches
 # GitHub, never from this repo's own history.
+#
+# Runs in the runner's Ubuntu container rather than on the macOS host: the
+# job needs nothing from macOS, and a throwaway container keeps the
+# git-filter-repo install out of the host's Python.
 name: mirror-to-github
 on:
   push:
@@ -10,20 +14,28 @@ on:
 
 jobs:
   mirror:
-    runs-on: macos
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Install git-filter-repo
-        run: pip3 install --quiet git-filter-repo
+        run: |
+          python3 -m venv "$RUNNER_TEMP/git-filter-repo"
+          "$RUNNER_TEMP/git-filter-repo/bin/pip" install --quiet git-filter-repo
+          echo "$RUNNER_TEMP/git-filter-repo/bin" >> "$GITHUB_PATH"
 
       - name: Build filtered copy
         run: |
+          git filter-repo --version
           git filter-repo --force --invert-paths \
             --path CLAUDE.md \
             --path AGENTS.md
+          if git ls-files | grep -Ex 'CLAUDE\.md|AGENTS\.md'; then
+            echo "filtered tree still contains CLAUDE.md or AGENTS.md" >&2
+            exit 1
+          fi
 
       - name: Push filtered copy to GitHub mirror
         run: |
