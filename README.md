@@ -47,7 +47,8 @@ control reaches `CGContext` and the rest through `import AppUIKit` alone, with n
 ## Rules
 
 This package follows the canonical `rules-swift` rule set, vendored in snapshot mode under
-`third_party/rules-swift`; see `AGENTS.md`. Formatting, linting, and
+`third_party/rules-swift` (start at its `README.md`); the audit of this package against that
+rule set is `docs/rules-swift-audit.md`. Formatting, linting, and
 commit hygiene are enforced by `.githooks/` (install per clone with `scripts/install-hooks.sh`).
 
 ## Changelog
