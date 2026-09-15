@@ -7,20 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-16
+
 ### Added
 
 - A DocC documentation catalog (`Sources/AppUIKit/AppUIKit.docc`) with a curated
   landing page for the library, built via the Swift-DocC plugin
-  (`swift package generate-documentation`).
+  (`swift package generate-documentation`). The plugin is declared as a package
+  dependency.
+- `AppUIView.setAXLabel(_:)`, the accessibility-label twin of
+  `setAXIdentifier(_:)`, wrapping `NSView.setAccessibilityLabel(_:)` on AppKit and
+  `UIView.accessibilityLabel` on UIKit.
 
 ### Changed
 
 - `LayoutDirectionManager`, `ConnectionPointCalculator`, and
   `DirectionalSymbols` moved out of `AppUIKit.LayoutDirection.swift` into their
   own files (one non-private type per file). No behavior change.
+- README installation now points at the public GitHub mirror
+  (`github.com/diyamantina/AppUIKit`), which is read-only.
 - The rules-swift CI lane now runs the full strict gate as a required step; the
   README and CONTRIBUTING rules sections point at the vendored
   `third_party/rules-swift` snapshot.
+
+### Fixed
+
+- `NSImage.flippedHorizontally()` returns the original image unchanged for a
+  zero-size, non-finite, or implausibly large image instead of crashing in
+  `lockFocus()`.
+- `ConnectionPointCalculator.bezierControlPoints(from:to:)` clamps the control
+  offset to its floor instead of leaking NaN when an endpoint is infinite.
 
 ## [0.1.9] - 2026-07-01
 

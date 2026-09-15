@@ -30,7 +30,7 @@ control reaches `CGContext` and the rest through `import AppUIKit` alone, with n
 ## Installation
 
 ```swift
-.package(url: "https://github.com/diyamantina/AppUIKit.git", from: "0.1.9"),
+.package(url: "https://github.com/diyamantina/AppUIKit.git", from: "0.2.0"),
 ```
 
 ```swift
