@@ -60,7 +60,9 @@
         /// optional until it is layer-backed). The cross-framework twin of
         /// `UIView.layer`, so a subclass adds sublayers without an `#if`.
         open var backingLayer: CALayer {
-            if let existing = layer { return existing }
+            if let existing = layer {
+                return existing
+            }
             let created = CALayer()
             layer = created
             wantsLayer = true

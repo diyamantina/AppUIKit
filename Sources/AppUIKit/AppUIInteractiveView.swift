@@ -76,15 +76,21 @@ open class AppUIInteractiveView: AppUITopLeftView {
 
     #elseif canImport(UIKit)
         override open func touchesBegan(_ touches: Set<UITouch>, with _: UIEvent?) {
-            if let point = touches.first?.location(in: self) { pressBegan(at: point) }
+            if let point = touches.first?.location(in: self) {
+                pressBegan(at: point)
+            }
         }
 
         override open func touchesMoved(_ touches: Set<UITouch>, with _: UIEvent?) {
-            if let point = touches.first?.location(in: self) { pressMoved(at: point) }
+            if let point = touches.first?.location(in: self) {
+                pressMoved(at: point)
+            }
         }
 
         override open func touchesEnded(_ touches: Set<UITouch>, with _: UIEvent?) {
-            if let point = touches.first?.location(in: self) { pressEnded(at: point) }
+            if let point = touches.first?.location(in: self) {
+                pressEnded(at: point)
+            }
         }
     #endif
 }
