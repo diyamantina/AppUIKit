@@ -11,3 +11,8 @@ DerivedData/
 *.xcuserstate
 *.hmap
 Package.resolved
+
+# Ignore local AI rule system: this repo push-mirrors to a public GitHub
+# repo for SPI; canonical copies live in mihaela-agents/untracked-claude/AppUIKit/
+AGENTS.md
+CLAUDE.md
