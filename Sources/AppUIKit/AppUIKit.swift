@@ -196,6 +196,7 @@ public enum AppUIKit {
     public typealias AppUIAccessibilityElement = NSAccessibilityElement
     // Documents.
     public typealias AppUIDocument = NSDocument
+    public typealias AppUIWindowDelegate = NSWindowDelegate
     public typealias AppUIDocumentController = NSDocumentController
     // Application lifecycle, menu validation and symbols that only AppKit has.
     public typealias AppUIApplicationDelegate = NSApplicationDelegate
