@@ -35,7 +35,7 @@ red, which is the intended behavior until the repo actually conforms.
 
 Rules corpus last read: 2026-06-30 (pin 97dc70f).
 
-Rules corpus file count: 79.
+Rules corpus file count: 80.
 
 Rules corpus refreshed to rules-swift v2.2.0 (6eecfc5) on 2026-10-14: the files new since the last read are listed and not yet audited against this repository.
 
@@ -133,6 +133,7 @@ rule is fully satisfied; it means no public rule source can be silently omitted.
 | `scripts/sync-rules.sh` | Listed |
 | `scripts/test-gates.sh` | Listed |
 | `ui/appuikit.md` | Listed |
+| `.github/pull_request_template.md` | Listed |
 
 ## Rule Matrix
 
