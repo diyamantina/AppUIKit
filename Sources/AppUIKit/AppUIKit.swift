@@ -197,9 +197,16 @@ public enum AppUIKit {
     // Application lifecycle, menu validation and symbols that only AppKit has.
     public typealias AppUIApplicationDelegate = NSApplicationDelegate
     public typealias AppUIMenuItemValidation = NSMenuItemValidation
+    public typealias AppUIValidatedUserInterfaceItem = NSValidatedUserInterfaceItem
+    public typealias AppUIText = NSText
+    public typealias AppUIRulerView = NSRulerView
+    public typealias AppUIBitmapImageRep = NSBitmapImageRep
     public typealias AppUIImageSymbolConfiguration = NSImage.SymbolConfiguration
+    public typealias AppUIWorkspace = NSWorkspace
     #if canImport(SwiftUI)
         public typealias AppUIViewRepresentable = NSViewRepresentable
+        public typealias AppUIHostingView<Content: View> = NSHostingView<Content>
+        public typealias AppUIHostingController<Content: View> = NSHostingController<Content>
     #endif
 
 #elseif canImport(UIKit)
@@ -350,6 +357,7 @@ public enum AppUIKit {
     public typealias AppUIImageSymbolConfiguration = UIImage.SymbolConfiguration
     #if canImport(SwiftUI)
         public typealias AppUIViewRepresentable = UIViewRepresentable
+        public typealias AppUIHostingController<Content: View> = UIHostingController<Content>
     #endif
 
 #endif
