@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `AppUIApplicationDelegate` on both frameworks; AppKit-only `AppUIMenuItemValidation` and `AppUIImageSymbolConfiguration`; UIKit-only `AppUIRect`, `AppUISize`, `AppUIPoint`, `AppUIWindowSceneDelegate`, `AppUITouch`, `AppUIKeyCommand`, `AppUIHoverGestureRecognizer`, `AppUIMenuElement`, `AppUIDeferredMenuElement`, `AppUIToolbar`, `AppUIImageSymbolConfiguration`, `AppUIScene`, `AppUISceneSession`, `AppUISceneConfiguration`, `AppUICommand`.
+- Documents: `AppUIDocument` (`NSDocument`, `UIDocument`), `AppUIDocumentController` (AppKit), `AppUIDocumentBrowserViewController` and `AppUIDocumentBrowserDelegate` (UIKit).
 - `AppUIHostingController` on both frameworks; AppKit-only `AppUIWorkspace` and `AppUIHostingView`.
 - `AppUIRepresentable`, a SwiftUI view hosting a platform view with `makeAppUIView` and `updateAppUIView` on both frameworks.
 - AppKit-only `AppUIValidatedUserInterfaceItem`, `AppUIText`, `AppUIRulerView` and `AppUIBitmapImageRep`.
