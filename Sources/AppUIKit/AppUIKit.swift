@@ -353,6 +353,7 @@ public enum AppUIKit {
     public typealias AppUIApplicationDelegate = UIApplicationDelegate
     public typealias AppUIWindowSceneDelegate = UIWindowSceneDelegate
     public typealias AppUIScene = UIScene
+    public typealias AppUIOpenURLContext = UIOpenURLContext
     public typealias AppUISceneSession = UISceneSession
     public typealias AppUISceneConfiguration = UISceneConfiguration
     public typealias AppUICommand = UICommand
