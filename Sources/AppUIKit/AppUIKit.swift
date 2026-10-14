@@ -194,6 +194,10 @@ public enum AppUIKit {
     public typealias AppUINib = NSNib
     public typealias AppUILayoutGuide = NSLayoutGuide
     public typealias AppUIAccessibilityElement = NSAccessibilityElement
+    // Application lifecycle, menu validation and symbols that only AppKit has.
+    public typealias AppUIApplicationDelegate = NSApplicationDelegate
+    public typealias AppUIMenuItemValidation = NSMenuItemValidation
+    public typealias AppUIImageSymbolConfiguration = NSImage.SymbolConfiguration
     #if canImport(SwiftUI)
         public typealias AppUIViewRepresentable = NSViewRepresentable
     #endif
@@ -326,6 +330,20 @@ public enum AppUIKit {
     public typealias AppUINib = UINib
     public typealias AppUILayoutGuide = UILayoutGuide
     public typealias AppUIAccessibilityElement = UIAccessibilityElement
+    // Geometry (the Core Graphics types, which AppKit's own names also are).
+    public typealias AppUIRect = CGRect
+    public typealias AppUISize = CGSize
+    public typealias AppUIPoint = CGPoint
+    // Application lifecycle, scenes and input that only UIKit has.
+    public typealias AppUIApplicationDelegate = UIApplicationDelegate
+    public typealias AppUIWindowSceneDelegate = UIWindowSceneDelegate
+    public typealias AppUITouch = UITouch
+    public typealias AppUIKeyCommand = UIKeyCommand
+    public typealias AppUIHoverGestureRecognizer = UIHoverGestureRecognizer
+    public typealias AppUIMenuElement = UIMenuElement
+    public typealias AppUIDeferredMenuElement = UIDeferredMenuElement
+    public typealias AppUIToolbar = UIToolbar
+    public typealias AppUIImageSymbolConfiguration = UIImage.SymbolConfiguration
     #if canImport(SwiftUI)
         public typealias AppUIViewRepresentable = UIViewRepresentable
     #endif

@@ -118,3 +118,11 @@ struct AppUIKitTests {
         #endif
     }
 #endif
+
+@Suite("AppUIKit symbols")
+struct AppUIKitSymbolTests {
+    @Test func `a system symbol resolves on either framework and an unknown name does not`() {
+        #expect(AppUIImage.appUISymbol("scribble") != nil)
+        #expect(AppUIImage.appUISymbol("no.such.symbol.name.at.all") == nil)
+    }
+}

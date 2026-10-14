@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `AppUIApplicationDelegate` on both frameworks; AppKit-only `AppUIMenuItemValidation` and `AppUIImageSymbolConfiguration`; UIKit-only `AppUIRect`, `AppUISize`, `AppUIPoint`, `AppUIWindowSceneDelegate`, `AppUITouch`, `AppUIKeyCommand`, `AppUIHoverGestureRecognizer`, `AppUIMenuElement`, `AppUIDeferredMenuElement`, `AppUIToolbar`, `AppUIImageSymbolConfiguration`.
+- `AppUIImage.appUISymbol(_:description:)`, an SF Symbol on AppKit and UIKit alike.
+
 ## [0.2.0] - 2026-09-16
 
 ### Added
