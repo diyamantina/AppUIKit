@@ -1,18 +1,19 @@
 # Implementation Patterns
 
-Six worked patterns for the package layers used in the canonical Swift monorepo. Foundation, Feature, Middleware, API, Component, Font/Resource.
+Six worked patterns for the target layers used in the canonical Swift monorepo.
+Foundation, Feature, Middleware, API, Component, Font/Resource.
 
 Cross-referenced from elsewhere:
-- Aggregator pattern: see Pattern 5 (Component Layer Architecture) > AllComponents Package, the canonical example
-- Font registration anti-patterns: see Pattern 6 (Font/Resource Package) > Why This Pattern
+- Aggregator pattern: see Pattern 5 (Component Layer Architecture) > AllComponents target, the canonical example
+- Font registration anti-patterns: see Pattern 6 (Font/Resource target) > Why This Pattern
 
-### Pattern 1: Foundation Package (No Dependencies)
+### Pattern 1: Foundation Target (No Dependencies)
 
 ```swift
-// Packages/Sources/SharedModels/Package.swift (excerpt)
+// Packages/Package.swift (SharedModels excerpt)
 let sharedModelsTarget = Target.target(
     name: "SharedModels",
-    dependencies: []  // RULE: Foundation packages have ZERO dependencies
+    dependencies: []  // RULE: Foundation targets have ZERO dependencies
 )
 ```
 
@@ -33,12 +34,12 @@ public struct User: Identifiable, Codable, Sendable {
 }
 ```
 
-Foundation packages are pure Swift, no dependencies, highly reusable.
+Foundation targets are pure Swift, have no dependencies, and are highly reusable.
 
-### Pattern 2: Feature Package (Depends on Foundation + Infrastructure)
+### Pattern 2: Feature Target (Depends on Foundation + Infrastructure)
 
 ```swift
-// Packages/Sources/AuthFeature/Package.swift (excerpt)
+// Packages/Package.swift (AuthFeature excerpt)
 let authFeatureTarget = Target.target(
     name: "AuthFeature",
     dependencies: [
@@ -80,10 +81,10 @@ public struct LoginView: View {
 
 Features depend on foundations and infrastructure, never on other features (except parent/child relationships).
 
-### Pattern 3: Middleware Package (Single Purpose Infrastructure)
+### Pattern 3: Middleware Target (Single Purpose Infrastructure)
 
 ```swift
-// Packages/Sources/OpenAPICachingMiddleware/Package.swift (excerpt)
+// Packages/Package.swift (OpenAPICachingMiddleware excerpt)
 let apiCachingTarget = Target.target(
     name: "OpenAPICachingMiddleware",
     dependencies: [
@@ -92,12 +93,12 @@ let apiCachingTarget = Target.target(
 )
 ```
 
-Middleware packages are highly focused, single-purpose, minimal dependencies.
+Middleware targets are highly focused, single-purpose, and have minimal dependencies.
 
 ### Pattern 4: API Layer Separation
 
 ```swift
-// RULE: Separate packages for each API concern
+// RULE: Separate targets for each API concern
 
 // ApiShared: OpenAPI spec + generated DTOs
 let apiSharedTarget = Target.target(
@@ -137,11 +138,11 @@ let apiServerAppTarget = Target.executableTarget(
 )
 ```
 
-API layer has 4 packages: Shared (contract), Client, Server, ServerApp (executable).
+API layer has four targets: Shared (contract), Client, Server, and ServerApp (executable).
 
 ### Pattern 5: Component Layer Architecture
 
-The component layer has a strict 3-package hierarchy. Start with the Components package first.
+The component layer has a strict three-target hierarchy. Start with the Components target first.
 
 #### Component System Architecture
 
@@ -153,7 +154,7 @@ SharedComponents (hot reload)
 AppComponents (app-specific production components)
 ```
 
-#### 1. Components Package (CORE - comes FIRST)
+#### 1. Components Target (CORE - comes FIRST)
 
 **Purpose:** Core component system infrastructure
 
@@ -201,7 +202,7 @@ Packages/Sources/Components/
 └── components.json
 ```
 
-#### 2. SharedComponents Package (Hot Reload Infrastructure)
+#### 2. SharedComponents Target (Hot Reload Infrastructure)
 
 **Purpose:** Hot reload and development-time infrastructure
 
@@ -222,7 +223,7 @@ let sharedComponentsTarget = Target.target(
 
 **Purpose:** Enables hot reload of components during development
 
-#### 3. AppComponents Package (App-Specific Components)
+#### 3. AppComponents Target (App-Specific Components)
 
 **Purpose:** Production app-specific components
 
@@ -262,11 +263,16 @@ Packages/Sources/AppComponents/
 └── AppComponentsRegistration.swift
 ```
 
-#### 4. AllComponents Package (Aggregator - Optional)
+#### 4. AllComponents Target (Aggregator - Optional)
 
-**Purpose:** Umbrella package for convenient imports.
+**Purpose:** Umbrella target for convenient imports.
 
-**This is also the canonical example of the general aggregator pattern.** An aggregator package re-exports its dependencies via `@_exported import`, so a consumer who writes `import YourAggregator` gets everything the aggregator depends on. The same shape works for any umbrella package, not just AllComponents (e.g., a hypothetical `AllFeatures` for a preview app would depend on every `*Feature` package and `@_exported import` each one).
+**This is also the canonical example of the general aggregator pattern.** An
+aggregator target re-exports its target dependencies via `@_exported import`, so
+a consumer who writes `import YourAggregator` gets every module the aggregator
+depends on. The same shape works for any umbrella target, not just AllComponents
+(for example, a hypothetical `AllFeatures` preview target would depend on every
+`*Feature` target and `@_exported import` each one).
 
 **Dependencies:**
 - Components
@@ -294,13 +300,13 @@ Use only in preview/demo apps and component libraries, NEVER in production featu
 #### Component Layer Rules
 
 Rules:
-1. Create the Components package first (core infrastructure).
+1. Create the Components target first (core infrastructure).
 2. SharedComponents depends only on hot reload tools (Inject, KZFileWatchers).
 3. AppComponents depends on Components + AppColors + AppFont
-4. NEVER skip the Components package - it contains the core system
+4. NEVER skip the Components target - it contains the core system
 5. Component configuration goes in `components.json`
 6. All components must conform to the protocol defined in Components
-7. Registration happens via ComponentRegistry from Components package
+7. Registration happens via ComponentRegistry from the Components target
 
 **Order of Creation:**
 1. Components (AnyComponent, ComponentRegistry, etc.)
@@ -308,7 +314,7 @@ Rules:
 3. AppComponents (app-specific components)
 4. AllComponents (aggregator - optional)
 
-### Pattern 6: Font/Resource Package
+### Pattern 6: Font/Resource Target
 
 Register fonts using CoreText, not via Info.plist. Resources use `.process()` in Package.swift.
 
@@ -342,7 +348,7 @@ import AppKit
 #endif
 
 public enum FontRegistration {
-    /// Register custom fonts from the AppFont package
+    /// Register custom fonts from the AppFont target
     public static func registerFonts() {
         // Get all resource URLs and filter for .otf files
         guard let resourceURLs = Bundle.module.urls(forResourcesWithExtension: nil, subdirectory: nil) else {
@@ -374,7 +380,7 @@ public enum FontRegistration {
 }
 ```
 
-#### Package Directory Structure
+#### Target Directory Structure
 
 ```
 Packages/Sources/AppFont/
@@ -411,7 +417,7 @@ struct iosAppApp: App {
 #### Why This Pattern?
 
 **Benefits:**
-- ✅ Works in SPM packages (Info.plist approach doesn't work in packages)
+- ✅ Works in SwiftPM targets (the Info.plist approach does not)
 - ✅ Explicit font registration with error reporting
 - ✅ Cross-platform (iOS + macOS) with `#if canImport()` conditionals
 - ✅ Uses `Bundle.module` (SPM automatic bundle)
@@ -423,22 +429,22 @@ struct iosAppApp: App {
 - `.copy()` → Resources copied verbatim, may not work with `Bundle.module`
 
 **Why CoreText not Info.plist:**
-- Info.plist font registration only works in app bundles, NOT in SPM packages
-- CoreText registration works anywhere (packages, frameworks, apps)
+- Info.plist font registration only works in app bundles, NOT in SwiftPM library targets
+- CoreText registration works anywhere (SwiftPM targets, frameworks, apps)
 
 Rules:
 1. Use `CTFontManagerRegisterFontsForURL` for font registration.
-2. Use `Bundle.module` in SPM packages, not `Bundle.main`.
+2. Use `Bundle.module` in SwiftPM targets, not `Bundle.main`.
 3. ALWAYS use `.process()` for font resources in Package.swift
 4. ALWAYS use `#if canImport(UIKit)` / `#if canImport(AppKit)` for platform imports
 5. ALWAYS call `FontRegistration.registerFonts()` in app init BEFORE any UI renders
-6. NEVER use Info.plist `UIAppFonts` / `ATSApplicationFontsPath` in packages
+6. NEVER use Info.plist `UIAppFonts` / `ATSApplicationFontsPath` in SwiftPM targets
 
 ## Acceptance check
 
 The patterns are conforming when their checkable invariants hold:
 
-- **Foundation and core-infrastructure packages carry zero dependencies.** The `SharedModels` (Pattern 1) and `Components` (Pattern 5) targets declare `dependencies: []`. Confirm by reading those target definitions in `Packages/Package.swift`; a non-empty list is a violation.
+- **Foundation and core-infrastructure targets carry zero dependencies.** The `SharedModels` (Pattern 1) and `Components` (Pattern 5) targets declare `dependencies: []`. Confirm by reading those target definitions in `Packages/Package.swift`; a non-empty list is a violation.
 
 - **Fonts register via CoreText against `Bundle.module`, never Info.plist or `Bundle.main`** (Pattern 6):
 
@@ -455,7 +461,6 @@ grep -rn 'CTFontManagerRegisterFontsForURL' Packages/Sources/AppFont/
 grep -rln '@_exported import' Packages/Sources/
 ```
 
-  Each hit MUST be an aggregator package used only off the production path.
+  Each hit MUST be an aggregator target used only off the production path.
 
-- **Observable checklist** for the structural shape, each a clear pass/fail: the API layer keeps its four-package split (Shared contract, Client, Server, ServerApp executable, Pattern 4); features depend on foundations and infrastructure but never on sibling features except a declared parent/child (Pattern 2); middleware packages stay single-purpose with minimal dependencies (Pattern 3); and the component layer is created in order Components, SharedComponents, AppComponents, AllComponents with the Components package never skipped (Pattern 5).
-
+- **Observable checklist** for the structural shape, each a clear pass/fail: the API layer keeps its four-target split (Shared contract, Client, Server, ServerApp executable, Pattern 4); features depend on foundations and infrastructure but never on sibling features except a declared parent/child (Pattern 2); middleware targets stay single-purpose with minimal dependencies (Pattern 3); and the component layer is created in order Components, SharedComponents, AppComponents, AllComponents with the Components target never skipped (Pattern 5).

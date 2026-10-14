@@ -1,6 +1,5 @@
 # Swift coding rules (canonical)
 
-[![gates](https://github.com/mihaelamj/rules-swift/actions/workflows/leak-gate.yml/badge.svg)](https://github.com/mihaelamj/rules-swift/actions/workflows/leak-gate.yml)
 [![license: CC BY 4.0 (prose), MIT (code)](https://img.shields.io/badge/license-CC%20BY%204.0%20prose%2C%20MIT%20code-blue)](LICENSE)
 
 The canonical, scrubbed Swift coding rules. This is the **Swift domain**: the
@@ -8,11 +7,37 @@ language- and platform-specific craft of writing Swift well. It sits on top of a
 vendored **core spine** of cross-cutting engineering discipline (see
 [`core/`](core/)).
 
-Each file here is one Swift rule area. `CONVENTIONS.md` is the short overview; this
+Each file here is one Swift rule area. [conventions.md](conventions.md) is the short overview; this
 repository is the full set, with the cross-cutting discipline vendored under
 [`core/`](core/). Examples use a sample tile-based static site generator named
 Tiledown (the `TileKit` library plus the `tile-down` executable); replace the
 example names with your project's when you adopt these.
+
+## Repository verification
+
+Run the complete local gate before proposing a change:
+
+```sh
+scripts/check-repo.sh
+```
+
+The gate requires `git`, a POSIX shell, Perl, and `jq`; the live issue-body audit
+also requires `curl`. The core-sync check uses a sibling
+`rules-engineering-discipline` clone when present and otherwise fetches the public
+upstream. A missing verifier is a failure, not a skipped check.
+
+The Codeberg origin uses Forgejo. Forgejo reads `.github/workflows` as a fallback
+when `.forgejo/workflows` is absent, but a workflow file alone does not prove that
+Actions are enabled or that a matching runner is online. The local gate output is
+therefore the authoritative evidence for this repository.
+
+These gates describe the current tree and enforce future commits. The published
+history contains legacy commit subjects that predate the current hook; preserving
+public commit identities takes precedence over rewriting that history.
+
+The scheduled tracker gate runs `scripts/check-issue-body-staleness.sh` against
+open Codeberg issues and compares repository labels with `.github/labels.json`.
+Run it manually when auditing tracker state between schedules.
 
 ## The core spine
 
@@ -78,7 +103,8 @@ domain that enforces them.
   authoritative documentation index, not from memory: query it with keywords and
   read the results for Apple-API facts; it is a search engine, not an agent.
 - [framework-policy.md](framework-policy.md) - stay inside Apple's own SDKs and the
-  Swift-native ecosystem; Linux falls back to C or C++ only.
+  Swift-native ecosystem when selecting an Apple client/UI framework; portable
+  libraries and servers follow the cross-platform rules.
 
 ## Packages
 
@@ -96,30 +122,32 @@ domain that enforces them.
 ## ExtremePackaging
 
 The granular packaging doctrine lives under [`exp/`](exp/): a monorepo split into
-many single-responsibility SPM packages with explicit, unidirectional dependencies,
-for isolated compilation, parallel builds, and per-package testability. The two
+many single-responsibility SwiftPM targets in one active package, with explicit,
+unidirectional dependencies for isolated compilation, parallel builds, and
+per-target testability. The two
 core files are loaded on every Swift session; the rest load on demand.
 
 - [exp/critical-rules.md](exp/critical-rules.md) - core: the five rules that gate
-  every package decision (single responsibility, explicit deps, granularity,
+  every target decision (single responsibility, explicit deps, granularity,
   naming, layer architecture).
 - [exp/when-to-create.md](exp/when-to-create.md) - core: the decision tree and
-  DO/DON'T list for when a new package is warranted.
+  DO/DON'T list for when a new target is warranted.
 - [exp/implementation-patterns.md](exp/implementation-patterns.md) - patterns for
-  foundation, feature, middleware, API, component, and font packages, and for
+  foundation, feature, middleware, API, component, and font targets, and for
   aggregators.
-- [exp/dependency-management.md](exp/dependency-management.md) - cross-package
-  dependencies, platform-conditional code, avoiding cycles.
+- [exp/dependency-management.md](exp/dependency-management.md) - cross-target and
+  external-package dependencies, platform-conditional code, avoiding cycles.
 - [exp/package-swift.md](exp/package-swift.md) - the closure-with-local-variables
   pattern for the `deps`, `allProducts`, and `targets` arrays.
 - [exp/common-mistakes.md](exp/common-mistakes.md) - anti-patterns paired with the
   canonical fix, for code review of `Package.swift` changes.
 - [exp/app-target.md](exp/app-target.md) - adding or modifying an app target
   (SwiftUI, UIKit, AppKit entry points).
-- [exp/testing.md](exp/testing.md) - the per-package test target and cross-package
-  test doubles (architecture angle; full rules in [testing.md](testing.md)).
-- [exp/migration.md](exp/migration.md) - extracting code into a new package or
-  splitting a large one.
+- [exp/testing.md](exp/testing.md) - the per-source-target test target and
+  cross-target test doubles (architecture angle; full rules in
+  [testing.md](testing.md)).
+- [exp/migration.md](exp/migration.md) - extracting code into a new target or
+  splitting a large target.
 - [exp/build-performance.md](exp/build-performance.md) - the build-time rationale
   behind the granularity.
 - [exp/verification.md](exp/verification.md) - the final checklist before an
@@ -141,12 +169,13 @@ The UI rules live under [`ui/`](ui/). Any code with UI keeps the renderer thin o
 - [ui/native-per-platform.md](ui/native-per-platform.md) - MANDATORY: optimize for the user via genuinely native UI per platform; per-device divergence is welcome; never trade the native experience for developer or test convenience or a write-once lowest-common-denominator. Governs and is superior to three-renderers.
 - [ui/three-renderers.md](ui/three-renderers.md) - build the same UI in all three Apple SDKs (SwiftUI, UIKit, AppKit) over the one model: the architecture's payoff and a comparison instrument for which framework behaves best in a scenario. Subordinate to native-per-platform: applies only where the same UI is also the best native UI.
 - [ui/swiftui-views.md](ui/swiftui-views.md) - the SwiftUI renderer: view architecture and identity.
+- [ui/appuikit.md](ui/appuikit.md) - MANDATORY for AppKit and UIKit code: import `AppUIKit` and name its `AppUI*` types, never an `NS` or `UI` type or a direct SDK import; add a missing alias to the layer first.
 - [ui/uikit-views.md](ui/uikit-views.md) - the UIKit renderer: `UIViewController`/`UIView` adapters, diffable data sources, re-pull on the change signal.
 - [ui/appkit-views.md](ui/appkit-views.md) - the AppKit renderer: `NSViewController`/`NSView` adapters, `withObservationTracking`, programmatic menus.
 - [ui/view-models.md](ui/view-models.md) - view-model responsibilities and patterns.
 - [ui/components.md](ui/components.md) - the component system.
 - [ui/colors.md](ui/colors.md) - the color system.
-- [ui/fonts.md](ui/fonts.md) - font registration in SPM packages.
+- [ui/fonts.md](ui/fonts.md) - font registration in SwiftPM targets.
 - [ui/pom.md](ui/pom.md) - Page Object Model for UI tests: screens behind page objects, identifiers from one shared source.
 - [ui/flowspec.md](ui/flowspec.md) - declarative UI scenarios driven by [FlowSpec](https://github.com/mihaelamj/FlowSpec): one flow, many renderers, replayed headless and on-device.
 

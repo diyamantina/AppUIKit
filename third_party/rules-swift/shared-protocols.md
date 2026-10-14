@@ -8,7 +8,9 @@ Companion to [dependency-injection.md](dependency-injection.md) and [package-imp
 
 Across the package's targets, every internal target falls into one of two categories:
 
-1. **Producer / feature targets** import only `SharedProtocols` plus external dependencies (Foundation, SwiftUI, Combine, third-party SPM). Their SPM `dependencies:` list is `["SharedProtocols", ...external products]` and nothing else internal.
+1. **Producer / feature targets** import only `SharedProtocols` plus external
+   dependencies available on their supported platforms. Their SPM `dependencies:`
+   list is `["SharedProtocols", ...external products]` and nothing else internal.
 2. **Composition root and live-writer targets** (the CLI, networking, storage, environment, and similar glue) import `SharedProtocols` plus the external framework they bridge. Their `dependencies:` list is `["SharedProtocols", ...the framework being wrapped]`. These are the only places where protocol-to-concrete glue exists.
 
 There is no third category.
@@ -16,7 +18,12 @@ There is no third category.
 ## Hard rules
 
 1. **`SharedProtocols` has zero internal dependencies.** Its SPM `dependencies:` list is `[]`.
-2. **Allowed imports inside `SharedProtocols`:** any external framework (`Foundation`, `SwiftUI`, `Combine`, a logging library, etc.). **Forbidden:** any internal package.
+2. **Allowed imports inside `SharedProtocols`:** Swift standard-library types and
+   the portable Foundation modules supplied by the toolchain. **Forbidden:** UI
+   frameworks, third-party package products, and every internal target. The
+   target's package-dependency list remains `[]`; a contract that would expose an
+   external or renderer type instead defines a neutral value or stays in its
+   adapter target.
 3. **Declarations are top-level.** `public protocol Recording`, not nested under a namespace anchor like `extension SharedProtocols { protocol Recording }`.
 4. **Naming follows the domain noun form.** `Recording`, `FileSystem`, `HTTPRequester`. The protocol is the noun; the conformer is `LiveRecording`. You do not have to suffix the protocol with `-able` or `-ing`.
 5. **One concept per file**, filename equal to the type name. Group related files in subfolders (`Coordinators/`, `Providers/`) when there are three or more related declarations.
@@ -27,7 +34,10 @@ There is no third category.
 - **Protocol seams:** every protocol that exists to decouple a producer from a concrete (`Recording`, `HTTPRequester`, `FileSystem`, `UUIDProvider`, `DateProvider`, and so on).
 - **Coordinator protocols** for navigation/flow when the codebase uses them.
 - **Value types** that travel across targets: enums (`HTTPMethod`, `LogLevel`), small structs (`HTTPResponse`, a domain model).
-- **Null implementations** (`NullRecording`, `NullHTTPRequester`) so producers can default to a no-op without importing a live writer.
+- **Null implementations** (`NullRecording`, `NullHTTPRequester`) that composition
+  roots, previews, and tests may inject explicitly when no behavior is intended.
+  Producers still receive the collaborator through `init`; they do not select a
+  hidden default.
 - **DEBUG-only `Preview_*_Impl`** no-op conformances for SwiftUI previews and tests.
 
 ## What does NOT go in `SharedProtocols`
@@ -37,17 +47,20 @@ There is no third category.
 
 ## Why
 
-Cross-package coupling through protocols (rather than concrete imports) only works if the protocol is reachable without dragging in the rest of the producer's universe. If a protocol lives in producer package `Logging`, then any consumer must `import Logging` to see it. Multiply that across every seam type and a producer ends up importing many internal packages. `SharedProtocols` collapses that to one import.
+Cross-target coupling through protocols (rather than concrete imports) only works
+if the protocol is reachable without dragging in the rest of the producer's
+universe. If a protocol lives in producer target `Logging`, then any consumer must
+`import Logging` to see it. Multiply that across every seam type and a producer
+ends up importing many internal modules. `SharedProtocols` collapses that to one
+import.
 
-Live writers import `SharedProtocols` for the protocol and the external framework for the concrete, never an intermediate package.
+Live writers import `SharedProtocols` for the protocol and the external framework
+for the concrete, never an intermediate internal target.
 
 ## Example
 
 ```swift
 // Sources/SharedProtocols/Coordinators/AppCoordinator.swift
-import SwiftUI
-import Combine
-
 @MainActor
 public protocol AppCoordinator: AnyObject {
     func showWelcome()
@@ -58,8 +71,6 @@ public protocol AppCoordinator: AnyObject {
 
 ```swift
 // Sources/SharedProtocols/Coordinators/PreviewHelpers.swift
-import SwiftUI
-
 #if DEBUG
 public final class Preview_AppCoordinator_Impl: AppCoordinator {
     public init() {}
@@ -148,26 +159,28 @@ Before adding a new `import` to a producer Swift file:
 ## CI guard
 
 ```bash
-# SharedProtocols must have no internal-package imports.
-# External imports (Foundation, SwiftUI, Combine, ...) are fine.
-INTERNAL_TARGETS=$(swift package describe --type json | jq -r '.targets[].name')
+# SharedProtocols imports only portable toolchain Foundation modules.
 SHARED_PROTOCOLS_PATH="Sources/SharedProtocols"
 [ -d "$SHARED_PROTOCOLS_PATH" ] || SHARED_PROTOCOLS_PATH="Packages/Sources/SharedProtocols"
-for ln in $(grep -rn '^import ' "$SHARED_PROTOCOLS_PATH"/); do
-    mod=$(echo "$ln" | awk '{print $2}')
-    if echo "$INTERNAL_TARGETS" | grep -qx "$mod"; then
-        echo "FAIL: SharedProtocols imports internal target $mod ($ln)"
-        exit 1
-    fi
+grep -rn '^import ' "$SHARED_PROTOCOLS_PATH"/ | while IFS= read -r hit; do
+    import_line=${hit#*:*:}
+    mod=$(printf '%s\n' "$import_line" | awk '{print $2}')
+    case "$mod" in
+        Foundation|FoundationEssentials|FoundationInternationalization) ;;
+        *)
+            echo "FAIL: SharedProtocols imports non-toolchain module $mod ($hit)"
+            exit 1
+            ;;
+    esac
 done
 ```
 
 ## Sequencing
 
-If you migrate existing scattered protocols into `SharedProtocols`, do it as one coordinated arc, not a per-package vote:
+If you migrate existing scattered protocols into `SharedProtocols`, do it as one coordinated arc, not a per-target vote:
 
 1. Move every cross-target protocol and value type into `SharedProtocols`.
-2. Update every internal target's deps: producers gain `["SharedProtocols"]` and drop intermediate packages; live writers gain `["SharedProtocols", <external framework>]`.
+2. Update every internal target's deps: producers gain `["SharedProtocols"]` and drop intermediate targets; live writers gain `["SharedProtocols", <external framework>]`.
 3. Update every old `import` to `import SharedProtocols`.
 4. Delete the now-empty intermediate source directories and target declarations.
 5. Build and test green; commit.
@@ -176,5 +189,5 @@ If you migrate existing scattered protocols into `SharedProtocols`, do it as one
 
 - [dependency-injection.md](dependency-injection.md): DI principles the seams serve
 - [package-import-contract.md](package-import-contract.md): what each target may import
-- [package-architecture.md](package-architecture.md): package layers and granularity
+- [package-architecture.md](package-architecture.md): target layers and granularity
 - [package-structure.md](package-structure.md): repository and manifest layout

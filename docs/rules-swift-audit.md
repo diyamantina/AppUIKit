@@ -35,7 +35,9 @@ red, which is the intended behavior until the repo actually conforms.
 
 Rules corpus last read: 2026-06-30 (pin 97dc70f).
 
-Rules corpus file count: 68.
+Rules corpus file count: 79.
+
+Rules corpus refreshed to rules-swift v2.2.0 (6eecfc5) on 2026-10-14: the files new since the last read are listed and not yet audited against this repository.
 
 <!--
   Every Markdown or shell file in the pinned rules-swift corpus MUST appear as a
@@ -52,13 +54,11 @@ rule is fully satisfied; it means no public rule source can be silently omitted.
 
 | Public rule source | Coverage |
 |---|---|
-| `.github/pull_request_template.md` | Listed |
 | `business-rules-and-constraints.md` | Listed |
 | `CHANGELOG.md` | Listed |
 | `code-style.md` | Listed |
 | `concurrency.md` | Listed |
 | `CONTRIBUTING.md` | Listed |
-| `CONVENTIONS.md` | Listed |
 | `core/brainstorming.md` | Listed |
 | `core/commits.md` | Listed |
 | `core/file-naming.md` | Listed |
@@ -120,6 +120,19 @@ rule is fully satisfied; it means no public rule source can be silently omitted.
 | `ui/uikit-views.md` | Listed |
 | `ui/view-models.md` | Listed |
 | `validation-rules.md` | Listed |
+| `conventions.md` | Listed |
+| `scripts/check-changelog-touched.sh` | Listed |
+| `scripts/check-core-sync.sh` | Listed |
+| `scripts/check-file-names.sh` | Listed |
+| `scripts/check-issue-body-staleness.sh` | Listed |
+| `scripts/check-links.sh` | Listed |
+| `scripts/check-repo.sh` | Listed |
+| `scripts/check-rule-structure.sh` | Listed |
+| `scripts/check-version-bumped.sh` | Listed |
+| `scripts/sync-priority-label.sh` | Listed |
+| `scripts/sync-rules.sh` | Listed |
+| `scripts/test-gates.sh` | Listed |
+| `ui/appuikit.md` | Listed |
 
 ## Rule Matrix
 

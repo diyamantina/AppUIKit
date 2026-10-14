@@ -28,9 +28,10 @@ tooling.
 1. **Optimal over fast.** Respect existing code and idioms. Clarify ambiguity
    before coding rather than assuming requirements. When a real trade-off exists,
    surface two or three options instead of guessing.
-2. **Progressive architecture.** Start with the simplest thing that works. Add a
-   protocol only when a second concrete consumer exists. Generalise only when a
-   pattern has actually emerged. Do not pre-abstract.
+2. **Progressive architecture.** Start with the simplest thing that works. A
+   protocol is earned by a real cross-target seam or by multiple implementations;
+   do not wrap a lone same-target concrete type preemptively. Generalise only when
+   a pattern has actually emerged.
 3. **Make impossible states unrepresentable.** Use exhaustive enums with
    associated values. Never force-unwrap (`!`, `try!`) in shipping code. Errors
    carry both a human-readable reason and an actionable recovery path.
@@ -55,9 +56,11 @@ tooling.
 
 ## Namespacing and file layout
 
-- **Every public type lives under an `enum`/`struct` namespace that mirrors its
-  folder.** No public type at file scope. Reading `Module.Sub.Leaf` should tell you
-  where the type lives and what it does.
+- **Every public implementation type lives under an `enum`/`struct` namespace
+  that mirrors its folder.** The only top-level public contracts are protocols
+  and supporting value/null/preview types in the foundation-only
+  `SharedProtocols` target, where the module itself is the namespace. Reading
+  `Module.Sub.Leaf` should tell you where every other type lives and what it does.
 - **Namespace anchors are caseless `enum`.** Use `struct` only when the type is
   also a value. Never `class` for a namespace. Shared mutable state is an `actor`
   or an injected value, never a `class`.
@@ -92,7 +95,10 @@ Tiledown builds and runs on Apple platforms and Linux, with Windows where explic
 
 ## Testing
 
-- Use the **Swift Testing** framework: `@Test`, `@Suite`, `#expect`. Not XCTest.
+- Use the **Swift Testing** framework for unit and integration tests: `@Test`,
+  `@Suite`, `#expect`. Use XCTest only where the platform harness requires it,
+  notably XCUITest, or while migrating an existing suite that cannot move in one
+  change.
 - One behaviour per test. Descriptive names. Deterministic data. No live network
   or filesystem dependence; inject test doubles.
 - One test target per source target, named `<SourceTarget>Tests`.

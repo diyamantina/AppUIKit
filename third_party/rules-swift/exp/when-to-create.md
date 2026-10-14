@@ -1,8 +1,8 @@
-# When to Create a New Package
+# When to Create a New Target
 
 Always-loaded core. Use the decision tree first. The DO/DON'T list and the checklist below cover the corner cases.
 
-## PACKAGE CREATION DECISION TREE
+## TARGET CREATION DECISION TREE
 
 ```
 Need to add new code?
@@ -19,28 +19,28 @@ Need to add new code?
 │   └─ View helper/modifier? → Add to SharedViews
 │
 ├─ Is it a complete user-facing feature?
-│   └─ YES → Create new *Feature package
+│   └─ YES → Create new *Feature target
 │       Example: ProfileFeature, SettingsFeature, PaymentFeature
 │
 ├─ Is it API/networking related?
-│   ├─ Client-side? → Add to ApiClient (or create new client package)
+│   ├─ Client-side? → Add to ApiClient (or create new client target)
 │   ├─ Server-side? → Add to ApiServer
 │   ├─ Shared DTOs? → Add to ApiShared (OpenAPI generated)
-│   └─ Middleware? → Create new *Middleware package
+│   └─ Middleware? → Create new *Middleware target
 │
 ├─ Is it shared infrastructure?
-│   └─ YES → Create new Shared* package
+│   └─ YES → Create new Shared* target
 │       Example: SharedUtilities, SharedNetworking
 │
 └─ Still unsure?
     └─ Ask: "Could this be reused in isolation?"
-        ├─ YES → Create new package
-        └─ NO → Add to most specific existing package
+        ├─ YES → Create new target
+        └─ NO → Add to most specific existing target
 ```
 
-## WHEN TO CREATE A NEW PACKAGE
+## WHEN TO CREATE A NEW TARGET
 
-### ✅ DO Create New Package When:
+### ✅ DO Create New Target When:
 
 1. **New Feature Module**
    - Complete user-facing feature (login, profile, payments)
@@ -65,17 +65,17 @@ Need to add new code?
    - Expensive compilation (generated code)
    - Example: `ApiShared` (OpenAPI generated)
 
-### ❌ DON'T Create New Package When:
+### ❌ DON'T Create New Target When:
 
 1. **Single Use Case**
    - Only used by one feature
    - Tightly coupled to specific screen
-   - → Add to that feature's package
+   - → Add to that feature's target
 
 2. **Trivial Helper**
    - 1-2 small functions
    - No external dependencies
-   - → Add to existing utility package
+   - → Add to existing utility target
 
 3. **Temporary Code**
    - Proof of concept
@@ -84,24 +84,24 @@ Need to add new code?
 
 ## DECISION CHECKLIST
 
-### Before Creating a New Package
+### Before Creating a New Target
 
-- [ ] Package has single, clear responsibility
-- [ ] Package name follows conventions (*Feature, Shared*, Api*, *Components)
+- [ ] Target has single, clear responsibility
+- [ ] Target name follows conventions (*Feature, Shared*, Api*, *Components)
 - [ ] Dependencies are minimal and explicit
 - [ ] No circular dependencies introduced
 - [ ] Can be built and tested in isolation
 - [ ] Fits into architectural layer (Foundation/Infrastructure/Feature/App)
 - [ ] Test target created alongside source target
 - [ ] Product registered in Package.swift products array
-- [ ] Dependencies only flow upward (no higher-layer dependencies)
+- [ ] Imports and declared dependencies point only to lower layers (no higher-layer dependencies)
 
-### Before Adding to Existing Package
+### Before Adding to Existing Target
 
-- [ ] New code shares responsibility with existing code
-- [ ] No better-suited package exists
-- [ ] Not creating a "God package" with mixed concerns
-- [ ] Won't introduce unwanted dependencies to package consumers
+- [ ] New code shares responsibility with the existing target
+- [ ] No better-suited target exists
+- [ ] Not creating a "god target" with mixed concerns
+- [ ] Won't introduce unwanted dependencies to target consumers
 
 ### Before Modifying Package.swift
 
@@ -119,7 +119,7 @@ Need to add new code?
 - [ ] Used trailing commas in all arrays
 - [ ] Applied `.when(platforms:)` for platform-specific dependencies within targets
 
-### Before Adding Font/Resource Package
+### Before Adding Font/Resource Target
 
 - [ ] Used `.process()` for resources, NEVER `.copy()`
 - [ ] Created `FontRegistration.swift` with CoreText registration
@@ -130,6 +130,5 @@ Need to add new code?
 - [ ] Added console logging for registration success/failure
 - [ ] Called `FontRegistration.registerFonts()` in app init BEFORE UI renders
 - [ ] NEVER used Info.plist font registration (`UIAppFonts`, `ATSApplicationFontsPath`)
-- [ ] Package has zero dependencies (fonts are Foundation layer)
+- [ ] Target has zero dependencies (fonts are Foundation layer)
 - [ ] Resources organized in dedicated subdirectory (e.g., `Fonts/`)
-

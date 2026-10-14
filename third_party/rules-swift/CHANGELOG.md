@@ -4,7 +4,116 @@ All notable changes to this rule set are documented here. This project follows S
 
 ## [Unreleased]
 
-A conformance pass bringing the repository into agreement with its own rules.
+## [2.2.0] - 2026-10-14
+
+### Added
+
+- `ui/appuikit.md`: imperative AppKit and UIKit renderers, features, and app shells import
+  the cross-framework layer and name its `AppUI*` types, never an `NS` or `UI` type or a
+  direct SDK import; a missing alias or helper is added to the layer first. Ships an
+  acceptance check (two greps to promote to a self-tested gate). `appkit-views.md` and
+  `uikit-views.md` point to it.
+
+## [2.1.1] - 2026-10-11
+
+### Fixed
+
+- `exp/common-mistakes.md`: the test-target pairing command filtered `swift package
+  describe` output on the target type `regular`, which that output never uses (it says
+  `library`), so the command checked no library target and passed vacuously. It now selects
+  `library` and `executable`, and the rule says how to confirm the command selects
+  something.
+
+## [2.1.0] - 2026-10-11
+
+### Added
+
+- `testing.md`: an exception to "mocks live in the test target" for test-support
+  targets that several test targets share, because SwiftPM does not let a test target
+  depend on another. It names four conditions (declared in a checked-in table, not
+  published, not shipped except by a named allowlist, mechanically checked) and ships a
+  runnable acceptance check.
+
+## [2.0.0] - 2026-07-11
+
+### Added
+
+- A complete local repository gate covering leak, namespacing, filenames,
+  relative links, rule structure, changelog, version bumps, and fault injection.
+- A checked-in five-label tracker manifest plus scheduled issue-body and label-drift
+  auditing against Codeberg.
+- An exact vendored core license, allowing the upstream README and every changed
+  core rule to remain byte-identical after synchronization.
+- A byte-for-byte core-sync gate with a planted divergent-vendor negative control.
+- Negative controls for commit-message rejection, breaking-change notation,
+  missing Markdown links, leaked prose, namespacing violations, missing rule proof
+  sections, missing changelog/version bumps, stale issue bodies, label drift, and
+  consumer freshness.
+- Acceptance checks for the remaining binding parsing, namespacing, planning,
+  design, dependency-injection, migration, and package-testing rules.
+
+### Changed
+
+- **Breaking:** Renamed the non-conventional `CONVENTIONS.md` overview to
+  `conventions.md`; inbound repository links now use the lowercase path.
+- **Breaking:** Reconciled the target graph, DI seams, namespace exception,
+  protocol-creation threshold, test-framework scope, and dependency direction
+  into one non-contradictory architecture. Consumers must review these rules
+  before updating their freshness marker.
+
+### Fixed
+
+- Made forbidden-byte matching portable across POSIX shells so Linux `sh` does
+  not treat hexadecimal escape text inside the gates as a leak.
+- Replaced the unavailable hosted priority-label action with a repository-owned
+  Forgejo API script and deterministic add, remove, and no-op fixtures.
+- Renamed the consumer workflow from conformance to freshness so its name matches
+  its actual proof: it compares the shared-rules version marker and does not claim
+  semantic conformance.
+- Strengthened the commit hook to enforce Conventional Commit types, the 72-column
+  limit, automated-author attribution prohibitions, and the em-dash rule.
+- Made missing SwiftFormat or SwiftLint fail instead of silently weakening a commit
+  that contains Swift files.
+- Repaired stale repository-relative links and narrowed the shared-path exception
+  in the folder-grouping rule so it no longer contradicts the default mandate.
+- Scoped the Apple framework policy to Apple client/UI targets so it no longer
+  contradicts the Swift Linux, Windows, WASM, and server rules.
+- Normalized ExtremePackaging terminology and examples to the repository's
+  one-package/many-targets architecture, removing impossible nested manifests.
+- Classified the repository's `VERSION` marker as a conventional root filename and
+  repaired the file-naming rule's non-Conventional commit example.
+- Removed the dead GitHub workflow badge and documented the Forgejo fallback and
+  local source of verification evidence.
+- Moved the shell-only consumer freshness job from an unproven `macos` label to
+  the repository's demonstrated `ubuntu-latest` Forgejo runner label.
+- Flattened the sole consumer workflow template from the one-file `templates/`
+  directory to `rules-freshness.yml` at the repository root.
+
+## [1.1.2]
+
+- **scripts/leak-gate.sh (.build exclusion):** all three scans and the file count now
+  exclude `.build/` directories. Fetched dependency checkouts carry their own vendor
+  names, absolute-path examples, and em dashes in documentation the repo does not own
+  and git does not track; scanning them made the gate permanently red on any consumer
+  with resolved dependencies, which trains readers to ignore it. Found by a rule-canon
+  audit on 2026-07-04 where the gate failed consumers solely on `.build/checkouts/`
+  markdown.
+
+## [1.1.1]
+
+- **scripts/leak-gate.sh (charter-file exception):** the vendor-name scan now excludes the
+  two agent charter files at the repository ROOT, where the filename is the tool's
+  addressing interface (function, not attribution). Root only; the same name in any nested
+  file still fails, and the exception is fault-injection tested downstream. A permanently
+  red gate trains readers to ignore it, which is worse than no gate.
+
+## [1.1.0]
+
+- **documentation.md Rule 0 (DocC scope):** DocC is packages-only (never apps), and only
+  for packages that are public OR heavily used. Non-qualifying packages skip the DocC
+  catalog entirely. Narrows the former "every project" framing.
+
+A conformance pass brought the repository closer to agreement with its own rules.
 
 ### Added
 

@@ -4,13 +4,13 @@ How a Tiledown-style native editor builds its UI from reusable, registry-driven 
 
 ## One component per file
 
-- Each UI component lives in its own component package, NEVER in feature packages or screens.
+- Each UI component lives in its own component target, NEVER in feature targets or screens.
 - ONE component per file; the file name equals the component name.
-- Every component conforms to the `Component` protocol from the `Components` package.
+- Every component conforms to the `Component` protocol from the `Components` target.
 
 ## Core rules
 
-### Rule 1: Three-package hierarchy
+### Rule 1: Three-target hierarchy
 
 Use this strict layering:
 
@@ -24,9 +24,9 @@ AppComponents (app-specific - depends on Components + theme + font packages)
 AllComponents (optional aggregator for previews - depends on Components + AppComponents)
 ```
 
-### Rule 2: Components package foundation
+### Rule 2: Components target foundation
 
-Create the `Components` package FIRST with the core infrastructure:
+Create the `Components` target FIRST with the core infrastructure:
 
 - MUST contain: the `Component` protocol, `AnyComponent`, `ComponentsRegistry`, `ComponentFactory`.
 - MUST contain: bundle management, registration interfaces, and the component-list model/view.
@@ -38,11 +38,11 @@ Create the `Components` package FIRST with the core infrastructure:
 Depend ONLY on hot-reload tooling:
 
 - A hot-reload injection library and a file-watching library.
-- NEVER depend on UI packages (theme, font). Mixing them in breaks the hot-reload layer's independence from the UI foundation.
+- NEVER depend on UI targets (theme, font). Mixing them in breaks the hot-reload layer's independence from the UI foundation.
 
 ### Rule 4: AppComponents dependencies
 
-Depend on the foundation packages:
+Depend on the foundation targets:
 
 - `Components` (core system)
 - The theme package (colors, styles)
@@ -52,8 +52,8 @@ Depend on the foundation packages:
 
 Register components via the registry:
 
-- All components conform to the `Component` protocol from the `Components` package.
-- Registration happens in a per-package `*ComponentsRegistration.swift`.
+- All components conform to the `Component` protocol from the `Components` target.
+- Registration happens in a per-target `*ComponentsRegistration.swift`.
 - Register external components through the shared registry.
 
 ## The Component protocol

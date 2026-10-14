@@ -7,7 +7,7 @@
 This rule governs committed **documents and assets**: scanned documents, photos, exports, dated records, and the other non-code files a repository accumulates. Two classes are out of scope and are never flagged by the audit below, because a different authority already names them:
 
 - **Source code.** A source file follows its language's own naming convention. A Swift type file is `PascalCase`, named for the single type it holds, and a framework-style internal type may carry a leading underscore (`_ConditionalContent.swift`); a Go file is lowercase; and so on. That language convention is the authority for those files, and the code-style rule of each language domain owns it. This rule does not override it, so source trees are excluded from the audit.
-- **Conventional and tool-mandated names.** The uppercase names a tool or ecosystem expects verbatim: the repository-root files `LICENSE`, `CHANGELOG`, `CONTRIBUTING`, `CODEOWNERS`, `NOTICE`, `AUTHORS`, and `README`; the platform infrastructure under `.github/` (`ISSUE_TEMPLATE/`, `PULL_REQUEST_TEMPLATE`, `FUNDING.yml`); and the build and package manifests a toolchain loads by an exact name (`Package.swift`, `Package.resolved`, `Package@swift-5.9.swift`, `Dockerfile`, `Makefile`, `Gemfile`, `Rakefile`, `Podfile`, `Cartfile`, `Fastfile`). Renaming any of them would break the tool that looks for them.
+- **Conventional and tool-mandated names.** The uppercase names a tool or ecosystem expects verbatim: the repository-root files `LICENSE`, `CHANGELOG`, `CONTRIBUTING`, `CODEOWNERS`, `NOTICE`, `AUTHORS`, `README`, and `VERSION`; the platform infrastructure under `.github/` (`ISSUE_TEMPLATE/`, `PULL_REQUEST_TEMPLATE`, `FUNDING.yml`); and the build and package manifests a toolchain loads by an exact name (`Package.swift`, `Package.resolved`, `Package@swift-5.9.swift`, `Dockerfile`, `Makefile`, `Gemfile`, `Rakefile`, `Podfile`, `Cartfile`, `Fastfile`). Renaming any of them would break the tool that looks for them.
 
 ## General rules
 
@@ -66,7 +66,7 @@ When renaming, use `git mv` to preserve history:
 git mv "Old File Name.pdf" "old-file-name.pdf"
 ```
 
-Commit: `rename: normalize filenames`
+Commit: `chore(files): normalize filenames`
 
 ## Audit (before any processing)
 
@@ -76,27 +76,29 @@ Point `<repo>` at the document and asset directories the rule governs, or add a 
 
 ```bash
 # Files with spaces
-find <repo> -name "* *" -not -path "*/.git/*" -not -name "*.md"
+find <repo> -name "* *" -not -path "*/.git/*"
 
 # Files with uppercase (documents and assets only; source files and the
 # conventional or tool-mandated names of the Scope section are out of scope)
 find <repo> -regex ".*/[^/]*[A-Z][^/]*" -not -path "*/.git/*" -not -path "*/.github/*" \
-  -not -name "*.md" \
-  -not -name "README*" -not -name "LICENSE" -not -name "CHANGELOG" \
-  -not -name "CONTRIBUTING" -not -name "CODEOWNERS" -not -name "NOTICE" \
-  -not -name "AUTHORS" \
+  -not -name "README*" -not -name "LICENSE*" -not -name "CHANGELOG*" \
+  -not -name "CONTRIBUTING*" -not -name "CODEOWNERS" -not -name "NOTICE" \
+  -not -name "AUTHORS" -not -name "VERSION" \
   -not -name "Package.swift" -not -name "Package.resolved" -not -name "Package@*.swift" \
   -not -name "Dockerfile" -not -name "Makefile" -not -name "Gemfile" \
   -not -name "Rakefile" -not -name "Podfile" -not -name "Cartfile" -not -name "Fastfile"
 
 # Files with underscores (excluding .git and the tool-mandated .github tree)
-find <repo> -name "*_*" -not -path "*/.git/*" -not -path "*/.github/*" -not -name "*.md"
+find <repo> -name "*_*" -not -path "*/.git/*" -not -path "*/.github/*"
 
 # HEIC files
 find <repo> \( -name "*.heic" -o -name "*.HEIC" \) -not -path "*/.git/*"
 ```
 
-Run over the documents and assets in scope, a clean repo returns nothing from the first three queries: the `.md`, `README`, and conventional-root-file exclusions cover the in-scope exceptions, and the source-tree exclusion keeps the audit off code, which the language's own code-style rule governs (Scope).
+Run over the documents and assets in scope, a clean repo returns nothing from the
+first three queries: the `README` and conventional-root-file exclusions cover the
+in-scope exceptions, and the source-tree exclusion keeps the audit off code, which
+the language's own code-style rule governs (Scope).
 
 ## Skip list
 

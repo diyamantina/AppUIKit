@@ -18,7 +18,9 @@ Features (AuthFeature, AppFeature, etc.)
 Apps (iosApp, macApp)
 ```
 
-Dependencies only flow downward. NEVER import from a higher layer.
+Imports and manifest dependencies point downward, from a higher-level consumer to
+a lower-level provider. NEVER import from a higher layer. Build order and dependent
+propagation run upward and are not the dependency direction described here.
 
 ### Circular Dependency Prevention
 
@@ -31,7 +33,7 @@ Dependencies only flow downward. NEVER import from a higher layer.
 
 ✅ **DO:**
 ```swift
-// Extract shared code to new package
+// Extract shared code to a new target
 // Both features depend on: SharedAuthModels
 ```
 
@@ -163,7 +165,7 @@ let targets: [Target] = {
 - ✅ UI targets only compile on Apple platforms
 - ✅ Clear separation between backend and frontend code
 - ✅ Prevents accidental dependencies on Apple frameworks in server code
-- ✅ Faster CI builds (Linux can skip UI packages)
+- ✅ Faster CI builds (Linux can skip UI targets)
 
 **When to Use:**
 - UI components, SwiftUI views → `#if os(iOS) || os(macOS)`
@@ -180,7 +182,9 @@ Conforms when:
 - **Manifest platform detection uses `#if os()`, never `#if canImport`.** This is the named SPM landmine: `#if canImport(UIKit)` silently breaks the manifest on Linux CI.
 
 ```bash
-grep -n '#if canImport' Packages/Package.swift Package.swift
+MANIFEST=Package.swift
+[ -f "$MANIFEST" ] || MANIFEST=Packages/Package.swift
+grep -n '#if canImport' "$MANIFEST"
 ```
 
   Output MUST be empty; platform splits in the manifest use `#if os(iOS) || os(macOS)`.
@@ -193,5 +197,14 @@ swift package resolve && swift build
 
   Both MUST exit 0.
 
-- **Observable checklist** for the flow rules, each a clear pass/fail: dependencies flow only downward through the foundation, design-system, infrastructure, components, features, apps layering, with no import from a higher layer; when two packages would depend on each other, the shared code is extracted to a new package rather than creating a cycle; Apple-only products and targets sit behind `#if os(iOS) || os(macOS)` while shared models, API contracts, and server code stay unconditional (base); and a platform-specific dependency is attached with `condition: .when(platforms:)` rather than duplicated. A server target that builds on Linux CI without Apple SDKs is the observable signal that the separation holds.
-
+- **Observable checklist** for the flow rules, each a clear pass/fail: imports and
+  manifest dependencies go only from apps toward features, components,
+  infrastructure, design system, and foundation, with no lower layer importing a
+  higher one; when two targets would depend on each other, the shared code is
+  extracted to a new lower-level target rather than creating a cycle; Apple-only
+  products and targets sit behind `#if os(iOS) || os(macOS)` while shared models,
+  API contracts, and server code stay unconditional (base); and a
+  platform-specific external package dependency is attached with
+  `condition: .when(platforms:)` rather than duplicated. A server target that
+  builds on Linux CI without Apple SDKs is the observable signal that the
+  separation holds.

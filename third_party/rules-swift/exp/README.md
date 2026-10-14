@@ -18,12 +18,12 @@ These two files are loaded in every Swift session. Together they cover the rule 
 | File | When to load |
 |---|---|
 | `implementation-patterns.md` | Adding a foundation/feature/middleware/API/component/font package; building an aggregator |
-| `dependency-management.md` | Adding a cross-package dependency; platform-conditional code (`#if os()`); circular-dep concerns |
+| `dependency-management.md` | Adding a cross-target or external-package dependency; platform-conditional code (`#if os()`); circular-dep concerns |
 | `package-swift.md` | Editing `Package.swift` (`deps`, `allProducts`, `targets` arrays) |
 | `common-mistakes.md` | Code review or self-review of `Package.swift` changes |
 | `app-target.md` | Adding or modifying an app target (SwiftUI, UIKit, AppKit entry points) |
 | `testing.md` | Wiring or restructuring a package's test target (architecture angle; full testing rules in top-level `testing.md`) |
-| `migration.md` | Extracting code into a new package or splitting a large one |
+| `migration.md` | Extracting code into a new target or splitting a large one |
 | `build-performance.md` | Rationale; read once for context, not normally needed during work |
 | `verification.md` | Final checklist before considering an ExtremePackaging change done |
 

@@ -216,13 +216,19 @@ public struct TileLogger {
 
 Using `canImport(os)` rather than `os(macOS) || os(iOS) || os(visionOS) || os(tvOS) || os(watchOS)` is the gold-standard pattern. Future Apple platforms inherit `os` automatically; explicit platform lists rot.
 
-### Pattern 6: SwiftUI app target per platform, shared feature package
+### Pattern 6: SwiftUI app target per platform, shared feature target
 
-Separate Xcode projects for iOS and macOS apps, same SwiftUI feature package providing the root view. Keep the platform-specific app shells thin; put the shared UI in one feature package.
+Separate Xcode projects for iOS and macOS apps, with the same SwiftUI feature
+target providing the root view. Keep the platform-specific app shells thin; put
+the shared UI in one feature target.
 
-### Pattern 7: UIKit (iOS) and AppKit (macOS) app shells, shared feature package
+### Pattern 7: UIKit (iOS) and AppKit (macOS) app shells, shared feature target
 
-When the app target must be UIKit (iOS scene delegate) or AppKit (NSWindowController), with the feature package providing platform-specific factory functions (`createMainWindow(for:)` / `createWindowController()`). Cross-platform abstractions for the shared types (`PlatformView`, `PlatformViewController`) live in a native-UI package.
+When the app target must be UIKit (iOS scene delegate) or AppKit
+(NSWindowController), the feature target provides platform-specific factory
+functions (`createMainWindow(for:)` / `createWindowController()`). Cross-platform
+abstractions for shared types (`PlatformView`, `PlatformViewController`) live in a
+native-UI target.
 
 ### Pattern 13: Forward-compat shim for unreleased Apple APIs
 
@@ -511,7 +517,7 @@ The `#else` arm is reserved for platforms you genuinely do not run on; every pla
 
 ## Cross-references
 
-- `docs/rules/linux-server.md` is the server-specific operational layer (AsyncHTTPClient, swift-log, graceful shutdown, Docker). Load both together for a server repo.
+- `linux-server.md` is the server-specific operational layer (AsyncHTTPClient, swift-log, graceful shutdown, Docker). Load both together for a server repo.
 - `concurrency.md` is platform-agnostic; Sendable + async/await behave identically on Apple and Linux.
 
 ## Authoritative references

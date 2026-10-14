@@ -12,6 +12,16 @@ sh "$(dirname "$0")/../scripts/leak-gate.sh"
 # Namespacing gate (one non-private top-level type per file) runs whole-tree on every
 # commit, matching code-style.md. Cheap, and vacuous in a repo with no Swift sources.
 sh "$(dirname "$0")/../scripts/check-namespacing.sh"
+sh "$(dirname "$0")/../scripts/check-file-names.sh"
+sh "$(dirname "$0")/../scripts/check-links.sh"
+sh "$(dirname "$0")/../scripts/check-rule-structure.sh"
+sh "$(dirname "$0")/../scripts/check-core-sync.sh"
+sh "$(dirname "$0")/../scripts/test-gates.sh"
+sh "$(dirname "$0")/../scripts/check-changelog-touched.sh"
+
+# Version-bump gate: any rule change must bump VERSION (the freshness marker downstream
+# repos compare against). Cheap, whole staged set. See scripts/check-version-bumped.sh.
+sh "$(dirname "$0")/../scripts/check-version-bumped.sh"
 
 # Lint only the Swift this commit touches. A commit with no Swift files (docs, config,
 # this rules repo) has nothing to format or lint, so stop here.
@@ -24,10 +34,12 @@ if command -v swiftformat >/dev/null 2>&1; then
     printf '%s\n' "$swift_files" | xargs swiftformat --lint --config .swiftformat
 else
     echo "pre-commit: swiftformat not found; install it so formatting is enforced locally." >&2
+    exit 1
 fi
 
 if command -v swiftlint >/dev/null 2>&1; then
     printf '%s\n' "$swift_files" | xargs swiftlint lint --strict --config .swiftlint.yml
 else
     echo "pre-commit: swiftlint not found; install it so linting is enforced locally." >&2
+    exit 1
 fi

@@ -6,7 +6,7 @@
 # mark helper types private/fileprivate so they drop out, or split the file.
 set -eu
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=${RULES_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
 SCAN="$ROOT/Packages/Sources"
 [ -d "$SCAN" ] || SCAN="$ROOT"
 

@@ -4,7 +4,7 @@ Operational rules for Tiledown code that runs on Linux in production: HTTP clien
 
 Load on demand. Triggers: Linux, server, Vapor, Hummingbird, AsyncHTTPClient, swift-log, swift-crypto, FluentSQLite, FluentPostgres, NIO, SIGTERM, graceful shutdown, Docker, `swift:6.2-jammy`, `swift:6.2-noble`, Bundle.module, FoundationNetworking on a server, isatty, BoringSSL.
 
-If your target runs on Linux in production (server, CLI binary, container workload), this file is the operational rule. The higher-level topology rule and the `#if canImport(...)` patterns live in `docs/rules/cross-platform.md`; this file is the server-specific operational layer.
+If your target runs on Linux in production (server, CLI binary, container workload), this file is the operational rule. The higher-level topology rule and the `#if canImport(...)` patterns live in `cross-platform.md`; this file is the server-specific operational layer.
 
 ## When this rule applies
 
@@ -291,7 +291,10 @@ import Testing
 }
 ```
 
-Mixed XCTest / Swift Testing in the same target is fine; both runners coexist. See `concurrency.md` for the broader rule.
+XCTest and Swift Testing can coexist in the same target during an incremental
+migration, because both runners are supported. New non-UI tests use Swift Testing;
+retain XCTest only when a required harness has no Swift Testing equivalent. See
+`concurrency.md` for the broader rule.
 
 References: ST-0009, ST-0016, ST-0017, ST-0022 (Swift Testing parity across Apple, Linux, Windows).
 
@@ -394,7 +397,7 @@ grep -rnE 'swift:6\.0-(jammy|noble|bookworm|alpine)' .github/workflows/
 
 ## 13. Cross-references
 
-- **`docs/rules/cross-platform.md`** is the higher-level topology rule and covers UI patterns + library patterns. This file is the server-specific operational layer; load both together for a server repo.
+- **`cross-platform.md`** is the higher-level topology rule and covers UI patterns + library patterns. This file is the server-specific operational layer; load both together for a server repo.
 - **`concurrency.md`** is platform-agnostic; Sendable + async/await behave identically on Apple and Linux.
 
 ## 14. Authoritative references

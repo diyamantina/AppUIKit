@@ -94,3 +94,12 @@ Default: `docs/plans/YYYY-MM-DD-<feature-slug>.md` in the repo where the work ha
 - Plans without a file map (you cannot verify scope without one).
 - Treating the design and the plan as the same thing (the design is "what and why"; the plan is "in what order, with what proofs").
 - Bundling unrelated cleanup into a feature plan (separate plans per concern).
+
+## Acceptance check
+
+A plan conforms when it was written before implementation, names the exact files
+in scope, orders tasks by dependency, gives every task a runnable verification
+command and commit message, records constraints and rollback risks, and defines
+completion with the full relevant gates. At handoff, diff the plan against the
+implemented file list and task state; any silent scope expansion or stale task is a
+failure until the plan is updated and re-approved where required.

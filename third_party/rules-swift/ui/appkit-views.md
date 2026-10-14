@@ -7,6 +7,8 @@ user action as `perform(_ intent:)`, and re-renders on the model's change signal
 observed through `withObservationTracking`. It holds ZERO business logic and owns
 ZERO state that is not view-local.
 
+> **Naming.** In a codebase that uses the cross-framework layer, the platform type names in the examples below are written as their `AppUI*` aliases and the module imported is `AppUIKit`; see `appuikit.md` (MANDATORY).
+
 ## Core rules
 
 1. The renderer renders Surface state only: no business logic, no API calls, no domain decisions.

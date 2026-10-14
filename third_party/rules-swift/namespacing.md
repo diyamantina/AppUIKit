@@ -83,7 +83,11 @@ extension Logging {
 }
 ```
 
-The namespace is still `enum Logging`. The protocol is a nested type. For cross-target seams, the protocol lives in a foundation-only `*Models` target (cross-package coupling via protocols, not concrete imports). The composition root wires the concrete conformer.
+The namespace is still `enum Logging`. The protocol is a nested type. The one
+exception is the foundation-only `SharedProtocols` target: its cross-target
+protocols, supporting values, and null/preview conformers stay top-level, with the
+module itself providing the namespace. The composition root wires live concrete
+conformers elsewhere.
 
 ## Anti-patterns
 
@@ -242,3 +246,12 @@ Build and tests verify the safe cases: anything that was constructing the empty 
 ## Cross-references
 
 - [code-style.md](code-style.md) covers the broader namespacing discipline (folder mirroring, file-naming convention, anchor file placement, one-type-per-file, reserved names, namespace-vs-module collisions). Read this file first for the anchor-type choice, then code-style.md for the operational details.
+
+## Acceptance check
+
+Run `scripts/check-namespacing.sh`; it MUST exit zero. Then inspect every namespace
+anchor changed by the work: a stateless, uninhabited anchor is a caseless `enum`; a
+`struct` carries value state; a `class` has reference identity; shared mutable state
+is an `actor` or an injected collaborator. Grep for construction sites of converted
+anchors and run the affected build and tests so an accidentally instantiable former
+namespace cannot survive silently.

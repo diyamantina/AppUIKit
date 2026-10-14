@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Contributing guide
-    url: https://github.com/mihaelamj/rules-swift/blob/main/CONTRIBUTING.md
+    url: https://codeberg.org/Mihaela/rules-swift/src/branch/main/CONTRIBUTING.md
     about: How a change is proposed, where it belongs, and the house conventions this repo follows.

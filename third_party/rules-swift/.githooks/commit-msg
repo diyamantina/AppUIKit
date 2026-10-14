@@ -1,17 +1,76 @@
 #!/bin/sh
-# commit-msg hook: reject AI/tool attribution and em dashes in the message.
+# commit-msg hook: enforce the repository's commit format and prose rules.
 # Install per clone (hooks are not cloned): git config core.hooksPath .githooks
 # See core/commits.md and core/git-discipline.md.
 
-msg_file="$1"
+set -eu
 
-if grep -qiE 'co-authored-by:[[:space:]]*(claude|cursor|copilot|codex|gpt|gemini|antigravity)|generated (with|by) (claude|cursor|copilot|codex|gpt|gemini|antigravity)|generated with .*code|powered by|robot' "$msg_file"; then
-    echo "commit-msg: remove tool attribution (co-author trailer, 'generated with', 'powered by', robot emoji)." >&2
+msg_file="${1:?usage: commit-msg <message-file>}"
+clean=$(mktemp "${TMPDIR:-/tmp}/rules-swift-commit-message.XXXXXX")
+trap 'rm -f "$clean"' EXIT HUP INT TERM
+
+# Ignore Git's comment lines and everything after the scissors marker.
+awk '
+    /^# ------------------------ >8 ------------------------$/ { exit }
+    !/^#/ { print }
+' "$msg_file" > "$clean"
+
+subject=$(sed -n '1p' "$clean")
+
+if [ -z "$subject" ]; then
+    echo "commit-msg: subject must not be empty." >&2
     exit 1
 fi
 
-if grep -q "$(printf '\xe2\x80\x94')" "$msg_file"; then
-    echo "commit-msg: no em dashes in commit messages; use commas, colons, or restructure." >&2
+if [ "${#subject}" -gt 72 ]; then
+    echo "commit-msg: subject exceeds 72 characters (${#subject})." >&2
+    exit 1
+fi
+
+if ! printf '%s\n' "$subject" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\([a-z0-9._-]+\))?!?: [^ ].*[^.]$'; then
+    echo "commit-msg: use <type>(<scope>): imperative description, with an allowed Conventional Commit type and no trailing period." >&2
+    exit 1
+fi
+
+case "$subject" in
+    *'!:'*)
+        if ! grep -qE '^BREAKING CHANGE: .+' "$clean"; then
+            echo "commit-msg: a breaking subject requires a BREAKING CHANGE footer with a migration explanation." >&2
+            exit 1
+        fi
+        ;;
+    *)
+        if grep -q '^BREAKING CHANGE:' "$clean"; then
+            echo "commit-msg: a BREAKING CHANGE footer requires ! in the subject." >&2
+            exit 1
+        fi
+        ;;
+esac
+
+if grep -qiE '(claude|anthropic|cursor|copilot|codex|openai|chatgpt|gpt-[0-9a-z.-]*|gemini|antigravity|(^|[^[:alnum:]])AI([^[:alnum:]]|$)|LLM|assistant|machine-generated|co-pilot|pair-programmer|robot)' "$clean"; then
+    echo "commit-msg: Rule 5.1 forbids tool or automated-author attribution." >&2
+    exit 1
+fi
+
+if grep -q "$(printf '\342\200\224')" "$clean"; then
+    echo "commit-msg: Rule 5.2 forbids em dashes; use commas, colons, or restructure." >&2
+    exit 1
+fi
+
+if grep -q "$(printf '\360\237\244\226')" "$clean" \
+    || grep -q "$(printf '\342\234\250')" "$clean"; then
+    echo "commit-msg: Rule 5.1 forbids tool-signature emoji." >&2
+    exit 1
+fi
+
+if grep -q "$(printf '\342\200\213')" "$clean" \
+    || grep -q "$(printf '\357\273\277')" "$clean"; then
+    echo "commit-msg: Rule 5.1 forbids hidden watermark characters." >&2
+    exit 1
+fi
+
+if awk 'length($0) > 72 { found = 1 } END { exit found ? 0 : 1 }' "$clean"; then
+    echo "commit-msg: body and footer lines must be wrapped at 72 characters." >&2
     exit 1
 fi
 

@@ -40,11 +40,13 @@ public struct TileRenderer {
 - Code that crosses a module boundary depends on a **named protocol**, not on a concrete type imported from another module.
 - The composition root (the executable target / app entry point) is the only place that holds concretes from multiple modules and wires them together.
 
-If and when Tiledown grows into multiple SPM packages:
+In Tiledown's multi-target package:
 
-- A feature/producer package may **not** `import` another feature/producer package.
-- Cross-package seams are **named protocols**, either declared in a small foundation-only `*Models` package or inlined per package.
-- The composition root remains the only place that imports concretes from several packages.
+- A feature/producer target may **not** `import` another feature/producer target.
+- Cross-target seams are **named protocols** declared in the foundation-only
+  `SharedProtocols` target.
+- The composition root remains the only place that imports concretes from several
+  producer targets.
 
 ## 4. No closure typealiases at cross-module seams.
 
@@ -67,13 +69,14 @@ Reasons: a named protocol is discoverable (you can find all conformers), it forc
 - This does **not** ban closures as method parameters or property values. `onProgress: (@Sendable (Progress) -> Void)?` is fine.
 - It **does** ban closure-typed *named* cross-module contracts.
 
-## 5. Every module lifts out cleanly.
+## 5. Every target lifts out cleanly.
 
-If and when Tiledown is split into multiple packages, each package should lift out of the repo without modification:
+Each target should lift out of the repo into a minimal package without source
+modification:
 
-- If a package needs a dependency to function, that dependency is **named in its public API**.
+- If a target needs a dependency to function, that dependency is **named in its public API**.
 - Hidden dependencies (ambient singletons, reach-into-shared-state, undeclared transitive imports) are violations even if they currently build.
-- A mechanical lift-out check copies the package plus its declared transitive dependencies to a temp directory, generates a minimal `Package.swift`, and runs `swift build`. Green means it lifts out.
+- A mechanical lift-out check copies the target plus its declared transitive dependencies to a temp directory, generates a minimal `Package.swift`, and runs `swift build`. Green means it lifts out.
 
 ## 6. Composition root: binary name stays clean.
 
@@ -97,15 +100,18 @@ The `*Impl` namespace says "this file is where we wire concretes." Composition r
 
 If Tiledown grows into multiple packages, keep a checked-in `docs/package-import-contract.md`: one row per target listing target name, allowed imports, and current state. Anything outside the allowed column is a **violation** and must be fixed in the same change. Back it with a CI script that greps `^import` per target and fails on disallowed imports.
 
-## 8. Foundation-only is the end state for producer packages.
+## 8. Foundation-tier imports are the end state for producer targets.
 
-The end goal for a multi-package split: producer packages import **only external primitives** (Foundation, system frameworks, vetted third-party SSG dependencies). Zero internal package imports. Each producer declares its own protocols inline. The composition root grows to bridge between per-package protocols.
+Producer targets import only external primitives (Foundation, system frameworks,
+vetted third-party dependencies) plus foundation-only protocol/value seam targets.
+They never import another producer's concrete target. A shared named contract stays
+in its seam target so producers and live writers conform to one interface; the
+composition root supplies the concretes.
 
-Until then, a producer package may import:
+A producer target may import:
 
 - Foundation primitives and system frameworks
-- Its own `*Models` companion and other foundation-only `*Models` protocol-seam targets
-- A shared value-type layer, if one exists
+- The foundation-only `SharedProtocols` target
 
 Sequence the work: settle the singleton and static-state removal first, then pursue foundation-only producers as a separate effort. Do not fold the two together.
 
@@ -141,4 +147,17 @@ Before adding `import X` to a producer module:
 
 1. Is `X` external (Foundation, system framework, a vetted third-party dependency)? Allowed.
 2. Is the target an executable target / composition root? Allowed.
-3. Otherwise: **STOP.** Surface the situation. The target state is foundation-only.
+3. Is `X` a foundation-only protocol/value seam target allowed by the checked-in
+   import contract? Allowed.
+4. Otherwise: **STOP.** Surface the situation. Producer-to-producer concrete
+   imports are forbidden.
+
+## Acceptance check
+
+For every changed producer target: grep finds no reachable `static let shared`, no
+service-locator accessor, and no closure typealias used as a named cross-target
+contract; every external collaborator appears in an initializer; every internal
+import is allowed by the checked-in package import contract; and the target's
+physical lift-out check builds independently. Run the full build and test suite and
+cite their counts. A green monorepo build without the import audit and lift-out
+proof is not sufficient.

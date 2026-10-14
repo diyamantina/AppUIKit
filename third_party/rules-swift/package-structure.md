@@ -111,7 +111,7 @@ For any UI you add, do not use Interface Builder artifacts:
 
 Keep views and view controllers in package targets, not in app targets:
 
-- SwiftUI views in feature packages.
+- SwiftUI views in feature targets.
 - UIKit/AppKit views in a dedicated UI package.
 - App targets contain ONLY entry points (`AppDelegate`, `SceneDelegate`, `@main`).
 
@@ -339,6 +339,6 @@ Before changing repo structure:
 
 ## Related rules
 
-- [package-architecture.md](package-architecture.md): single-responsibility packages, layers, and the when-to-create decision tree
+- [package-architecture.md](package-architecture.md): single-responsibility targets, layers, and the when-to-create decision tree
 - [package-import-contract.md](package-import-contract.md): what each target may import
-- [shared-protocols.md](shared-protocols.md): the cross-target protocol-seam package
+- [shared-protocols.md](shared-protocols.md): the cross-target protocol-seam target

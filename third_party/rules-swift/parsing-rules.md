@@ -13,9 +13,12 @@ Key files to study:
 
 ## Core Principles
 
-### 1. Protocol-First Design
+### 1. Protocol Before Shared Implementations
 
-Define shared behavior in protocols before concrete types:
+When two formats/providers share behavior, or when the parser contract crosses a
+target boundary, define the shared contract before its concrete implementations.
+Do not introduce a protocol around one same-target parser with no boundary or
+second implementation; that is unearned abstraction.
 
 ```swift
 /// All parsed items share these properties
@@ -253,3 +256,12 @@ func decodeText(from data: Data) -> String? {
 - Create tightly-coupled parsers
 - Skip the validation layer
 - Use force unwrapping in parsers
+
+## Acceptance check
+
+A parser conforms when parsing and validation are separate entry points; malformed,
+empty, boundary, alternate-encoding, and unknown-field fixtures exercise both
+success and failure paths; no production parser uses force unwraps or silently
+drops input; and the parser test suite passes with its case count cited. For a
+bidirectional format, also run the corpus and awkward-value round trips required by
+`core/round-trip-transformation.md`.

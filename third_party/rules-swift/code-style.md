@@ -8,13 +8,23 @@ For the narrower question "should the anchor be `enum`, `struct`, or `class`?", 
 
 ## Namespacing discipline (mandatory)
 
-**Every public type lives under a struct or enum namespace that mirrors its folder on disk.** No public type stays at file scope. The qualified name carries module + folder + role; reading `Module.Sub.Leaf` should be enough to know where the type lives and what it does.
+**Every public implementation type lives under a struct or enum namespace that
+mirrors its folder on disk.** The named exception is the foundation-only
+`SharedProtocols` target: its cross-target protocols, small contract values, and
+null/preview conformers stay at file scope, because the module is their namespace.
+The qualified name otherwise carries module + folder + role; reading
+`Module.Sub.Leaf` should be enough to know where the type lives and what it does.
 
 This applies to every Swift project. The TileDown-style root + sub-namespace pattern below is one specific instance of this discipline.
 
 ### Core rules
 
-1. **No exceptions.** Every `public struct / enum / class / actor / protocol` declared at file scope MUST be wrapped in an `extension <Namespace> { ... }` block (or declared inside a nested type). Free-standing top-level public types are not allowed.
+1. **One named exception.** Outside `SharedProtocols`, every `public struct / enum
+   / class / actor / protocol` declared at file scope MUST be wrapped in an
+   `extension <Namespace> { ... }` block (or declared inside a nested type).
+   `SharedProtocols` keeps its contract protocols, supporting value types, and
+   null/preview conformers top-level; concrete live implementations never use
+   this exception.
 
 2. **Mirror the folder.** When a folder `Sources/Foo/Bar/` holds a type `X`, the type lives at `Foo.Bar.X`. The namespace tree is a literal reflection of the file system tree.
 

@@ -1,0 +1,27 @@
+[
+  {
+    "name": "bug",
+    "color": "ff3b30",
+    "description": "Something ships incorrectly"
+  },
+  {
+    "name": "enhancement",
+    "color": "007aff",
+    "description": "New rule, refactor, or design proposal"
+  },
+  {
+    "name": "epic",
+    "color": "af52de",
+    "description": "Aggregation parent for related issues"
+  },
+  {
+    "name": "priority: high",
+    "color": "ff3b30",
+    "description": "Critical, release-gating, or actively blocking"
+  },
+  {
+    "name": "good first issue",
+    "color": "34c759",
+    "description": "Suitable for a new contributor"
+  }
+]

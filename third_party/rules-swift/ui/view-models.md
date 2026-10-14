@@ -28,7 +28,7 @@ ViewModel = Coordinator (NOT a business-logic container)
 
 ### Rule 3: Dependency injection
 
-- MUST inject collaborators (see docs/rules/dependency-injection.md)
+- MUST inject collaborators (see [dependency-injection.md](../dependency-injection.md))
 - SHOULD prefer struct-based dependencies over protocols where practical
 - NO global singletons
 

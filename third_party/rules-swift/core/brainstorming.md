@@ -107,3 +107,12 @@ A single confirmation is enough; no full ceremony required.
 - Burying the design in a long preamble before the actual question.
 - Designing in isolation without reading the existing patterns first.
 - Treating silence as approval.
+
+## Acceptance check
+
+For a non-trivial change, the conversation or tracked design artifact MUST show,
+before the first source edit: the goal, affected files, public surface, tests, and
+principal risks, followed by explicit approval. Compare the timestamp or message
+order with the first implementation edit. If implementation exposed a material
+scope change, the record MUST also show a revised design and fresh approval before
+work continued.

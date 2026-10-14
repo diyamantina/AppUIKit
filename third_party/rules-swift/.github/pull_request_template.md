@@ -15,4 +15,4 @@ Closes #
 - [ ] `CHANGELOG.md` updated if production source changed; otherwise `[no-changelog]` is justified (Rule 3.2).
 - [ ] Self-critic pass done: I read my own diff as a reviewer and fixed what it surfaced (Rule 3.3).
 - [ ] No AI/tool attribution and no em dashes in any committed text (Rules 5.1, 5.2).
-- [ ] Gates pass locally: `sh scripts/leak-gate.sh` and `sh scripts/check-namespacing.sh` are green.
+- [ ] Complete local gate passes: `scripts/check-repo.sh` is green.

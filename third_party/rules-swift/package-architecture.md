@@ -36,7 +36,7 @@ Declare dependencies explicitly in `Package.swift`:
 
 - List every dependency in the manifest.
 - No reliance on implicit or transitive dependencies.
-- Minimize cross-package dependencies.
+- Minimize cross-target dependencies.
 - Prefer unidirectional dependency flow.
 
 ### Rule 3: Target granularity
@@ -62,15 +62,21 @@ targets around it rather than renaming it.
 
 ### Rule 5: Layer architecture (unidirectional)
 
-Organize targets into layers with dependency flow strictly bottom to top. The exact number of layers varies per project; the constants are:
+Organize targets into layers ordered from foundation at the bottom to front doors
+at the top. Imports and manifest dependencies point only from a higher-level
+consumer to a lower-level provider. The exact number of layers varies per project;
+the constants are:
 
 - **Foundation** (bottom): shared value types, models, primitive utilities, logging.
 - **Infrastructure:** protocols, persistence, networking, file I/O, parsers, transports.
-- **Domain:** services, business logic, per-feature or per-verb operation packages.
-- **Presentation** (UI projects only): component packages, design-system packages, screens.
+- **Domain:** services, business logic, per-feature or per-verb operation targets.
+- **Presentation** (UI projects only): component targets, design-system targets, screens.
 - **Front-door** (top): binary targets, apps, CLIs, preview hosts, test harnesses.
 
-Every dependency edge points upward. No back-edges. The active layer instantiation lives in the repository's active `Package.swift`.
+A lower layer MUST NOT import or declare a dependency on a higher layer; that is a
+back-edge. Build order and dependent propagation naturally travel from the lower
+provider upward, but the declared `depends on` relation points downward. The
+active layer instantiation lives in the repository's active `Package.swift`.
 
 ## When to create a new target
 
@@ -122,7 +128,7 @@ Before creating a new target:
 - [ ] Fits a single architectural layer
 - [ ] Test target created alongside the source target
 - [ ] Product registered in the `Package.swift` products array when the target is public or executable
-- [ ] Dependencies only flow upward
+- [ ] Imports and declared dependencies point only to the same or a lower layer
 
 Before adding to an existing target:
 
@@ -141,12 +147,12 @@ Before modifying `Package.swift`:
 - [ ] Trailing commas in all arrays
 - [ ] `.when(platforms:)` applied for platform-specific dependencies within targets
 
-If you add a font or resource package:
+If you add a font or resource target:
 
 - [ ] Used `.process()` for resources, never `.copy()`
 - [ ] Accessed resources via `Bundle.module`, never `Bundle.main`
 - [ ] Used `#if canImport(UIKit)` / `#if canImport(AppKit)` for platform imports
-- [ ] The package has zero dependencies (resources are a foundation-layer concern)
+- [ ] The target has zero dependencies (resources are a foundation-layer concern)
 
 ## Example layout (illustrative, not normative)
 
@@ -173,5 +179,5 @@ Sources/                         # or Packages/Sources/ in a project monorepo
 
 - [package-structure.md](package-structure.md): repository layout and the `Package.swift` manifest shape
 - [package-import-contract.md](package-import-contract.md): what each target may import
-- [shared-protocols.md](shared-protocols.md): the cross-target protocol-seam package
+- [shared-protocols.md](shared-protocols.md): the cross-target protocol-seam target
 - [dependency-injection.md](dependency-injection.md): the DI principles these layers serve

@@ -6,7 +6,7 @@ This is a cross-cutting layout rule. It is most concrete in package managers whe
 
 ## One folder per buildable unit is the mandate, not just the default
 
-For a package manager whose default is one folder per module (target, package, crate), the standing rule is: **every buildable unit maps to exactly one top-level source folder, and that folder is the unit's home** (`Sources/<Unit>/`, `Tests/<Unit>Tests/`). No single `path:` pointing many units into a shared parent, no disjoint `sources:` / `exclude:` slicing to carve multiple units out of one folder. Listing the source root must enumerate every unit; the filesystem boundary IS the unit boundary.
+For a package manager whose default is one folder per module (target, package, crate), the standing default is: **every buildable unit maps to exactly one top-level source folder, and that folder is the unit's home** (`Sources/<Unit>/`, `Tests/<Unit>Tests/`). Do not point many units into a shared parent or partition them with disjoint `sources:` / `exclude:` lists unless one of the two documented earned exceptions below applies and the exception is justified in the manifest. Listing the source root should enumerate every unit; the filesystem boundary is normally the unit boundary.
 
 This supersedes the older "family-parent folder" idea for the unit-grouping case. The file-grouping rules below (grouping FILES *within* a single unit's folder) still apply unchanged. The two earned-exception patterns (same-kind single-file clusters; sub-units sharing an umbrella) are discouraged for new code; flatten unless there is a compelling, documented reason.
 
@@ -100,7 +100,7 @@ When reviewing an existing tree:
 
 ## How this composes with a package manager (Swift / SPM specifics)
 
-This rule conflicts with SPM's default `Sources/<Target>/<files>` convention when you have many single-file targets, because SPM expects one folder per target. Resolve by giving each affected target an explicit `path:` and `sources:` declaration in the manifest. Multiple targets MAY share the same `path:` as long as each declares a disjoint `sources:` list:
+For an existing or explicitly approved same-kind single-file cluster, this rule conflicts with SPM's default `Sources/<Target>/<files>` convention because SPM expects one folder per target. Apply the earned exception by giving each affected target an explicit `path:` and `sources:` declaration in the manifest. Multiple targets MAY share the same `path:` only inside that documented exception and only when each declares a disjoint `sources:` list:
 
 ```swift
 let importersSrc = "Sources/Importers"

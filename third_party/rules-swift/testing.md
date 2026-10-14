@@ -595,6 +595,51 @@ public struct MockFileClient: FileClientProtocol {
 
 The protocol MAY be public (so the mock can implement it). The mock MUST live in the test target.
 
+#### Exception: test-support targets
+
+SwiftPM does not let one test target depend on another, so a double or a fixture that
+several test targets share cannot live in any one of them. A project MAY keep such
+shared code in a **test-support target** under `Packages/Sources/`. A test-support
+target conforms only when all four hold:
+
+1. **Declared.** It is listed, with the reason it exists, in a checked-in table
+   (`docs/test-support-targets.md`). A target that is not in the table is not a
+   test-support target, and the mocks rule above applies to it.
+2. **Not published.** No `.library` and no `.executable` product exposes it.
+3. **Not shipped, except by allowlist.** No target of a shipped product depends on it,
+   except the dependency edges the table names, each with a reason. The usual reason
+   is a demo or diagnostic executable that runs against an in-memory implementation.
+4. **Mechanically checked.** The project's gate reads the resolved package
+   (`swift package dump-package`) and fails on a published support target, on an edge
+   that is not in the allowlist, and on a support target missing from the table.
+
+A real implementation that happens to run in memory and that an app ships (an in-memory
+store behind a seam, chosen by the composition root) is not a test double. It is an
+adapter, it is subject to the import contract and not to this rule, and it is named for
+what it is and not `Mock` or `Fake`.
+
+Acceptance check, with `SUPPORT` set to the names in the table:
+
+```bash
+SUPPORT='["TestSupport","ConversationFixtures","CloudFake"]'
+swift package --package-path Packages dump-package | jq -r --argjson s "$SUPPORT" '
+  (.products[] | select(any(.targets[]; . as $t | $s | index($t) != null)) | "published: " + .name),
+  (.targets[] | select(.type == "executable" or .type == "regular")
+     | select(.name as $n | $s | index($n) == null) | . as $x
+     | .dependencies[]? | (.target // .byName)[0]
+     | select(. as $d | $s | index($d) != null) | "\($x.name) -> \(.)")'
+```
+
+No line may begin with `published:`. Every `A -> B` line MUST appear in the table's
+allowlist with a reason, and the allowlist MUST NOT name an edge that the command does
+not print.
+
+WRONG: `Sources/FileClientMock/` exposed as a library product, so any consumer can link
+a mock into a release build.
+
+RIGHT: `Sources/TestSupport/` listed in the table, absent from `products:`, and
+depended on only by test targets and the one named diagnostic executable.
+
 ### Running a single target's tests
 
 ```bash

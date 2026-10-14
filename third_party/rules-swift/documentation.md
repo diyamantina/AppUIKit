@@ -2,11 +2,19 @@
 
 How a TileKit-style library organizes its documentation: a single DocC catalog that is the source of truth and moves with the code in every PR.
 
-Every project's documentation lives in a **DocC catalog** inside the repo as its own SPM target. There is no freeform `Docs/` folder. The catalog is the single source of truth. Every PR that touches code must update the matching catalog article in the same PR.
+A **qualifying package's** documentation lives in a **DocC catalog** inside the repo as its own SPM target (see Rule 0 for what qualifies). There is no freeform `Docs/` folder. The catalog is the single source of truth. Every PR that touches code must update the matching catalog article in the same PR.
 
 ## Core rules
 
-### Rule 1: Documentation lives in a DocC catalog
+### Rule 0: Where DocC applies (scope)
+
+DocC is deliberately NOT universal. Applying it everywhere wastes build time and hosting on surfaces no one reads.
+
+- **Packages only, never apps.** A DocC catalog belongs to a reusable SPM package. App targets (the shipped product shells) do NOT get a `{Product}Documentation` target or a docs-publishing workflow; their behavior is documented by their code, tests, and the packages they compose.
+- **Not every package, only public OR heavily-used ones.** A package qualifies for DocC when it is (a) **public** (published / consumable outside this workspace), or (b) **heavily used** internally (a foundation package many other packages depend on). A private, single-consumer, or experimental package does NOT get a DocC catalog; inline `///` comments and its tests are its documentation.
+- If a package does not qualify, Rules 1-14 below simply do not apply to it. Skip the DocC target entirely rather than shipping an empty or unread catalog.
+
+### Rule 1: Documentation lives in a DocC catalog (for qualifying packages)
 
 Organize repo-level documentation as a Swift-DocC catalog in a dedicated SPM target.
 
@@ -239,10 +247,13 @@ Rule 8 covers catalog articles; this rule covers the `///` doc comments attached
 
 **Weighting (how much doc is enough):**
 - Types & entry points: one-paragraph abstract + non-obvious-behaviour notes. Always.
-- Widely-referenced methods (3 or more caller files outside the declaring package): one-line summary + `- Parameter` / `- Returns` / `- Throws` where non-trivial.
+- Widely-referenced methods (3 or more caller files outside the declaring target): one-line summary + `- Parameter` / `- Returns` / `- Throws` where non-trivial.
 - Leaf / single-caller methods: one-line summary only.
 
-A weighted audit (undocumented public decls times cross-package usage) should be run before every major release to catch drift. Items referenced in many files but lacking docs are the highest-value gaps; items referenced nowhere outside their file are near-zero priority.
+A weighted audit (undocumented public declarations times cross-target usage)
+should run before every major release to catch drift. Items referenced in many
+files but lacking docs are the highest-value gaps; items referenced nowhere
+outside their file are near-zero priority.
 
 ---
 

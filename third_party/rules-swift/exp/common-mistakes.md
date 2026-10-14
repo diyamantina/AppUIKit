@@ -2,10 +2,10 @@
 
 Anti-patterns paired with the canonical fix. Mini-DOs are inline; full canonical forms live in `package-swift.md` (closure-with-locals), `testing.md` (test-target placement), and `implementation-patterns.md` (Pattern 6 for fonts).
 
-### ❌ DON'T: Create God Packages
+### ❌ DON'T: Create God Targets
 
 ```swift
-// WRONG: "Shared" package with everything
+// WRONG: "Shared" target with everything
 Packages/Sources/Shared/
 ├── Models/
 ├── Views/
@@ -14,7 +14,7 @@ Packages/Sources/Shared/
 └── Utilities/
 ```
 
-✅ **DO:** Split into focused packages
+✅ **DO:** Split into focused targets
 ```
 Packages/Sources/
 ├── SharedModels/
@@ -96,7 +96,11 @@ Full forms (with platform splits, helper extensions, every dep / product / targe
 
 ### ❌ DON'T: Skip Test Targets
 
-Every package MUST ship with a matching `Target.testTarget(name: "<name>Tests", dependencies: ["<name>"])`, grouped as a pair with the source target in a named sub-array. See `testing.md > TEST TARGET PLACEMENT` for the canonical form, folder layout, and the rule that mocks live in the test target rather than the source package.
+Every source target MUST ship with a matching `Target.testTarget(name:
+"<name>Tests", dependencies: ["<name>"])`, grouped as a pair with the source
+target in a named sub-array. See `testing.md > TEST TARGET PLACEMENT` for the
+canonical form, folder layout, and the rule that mocks live in the test target
+rather than the source target.
 
 ### ❌ DON'T: Transitive Dependencies
 
@@ -133,18 +137,18 @@ let authFeatureTarget = Target.target(
     name: "AuthFeature",
     dependencies: [
         "SharedModels",
-        "AppCoordination",  // ✅ Protocol package
+        "AppCoordination",  // ✅ Protocol target
     ]
 )
 ```
 
-### ❌ DON'T: Use Info.plist for Font Registration in Packages
+### ❌ DON'T: Use Info.plist for Font Registration in SwiftPM Targets
 
-Three anti-patterns, all covered by `implementation-patterns.md > Pattern 6 (Font/Resource Package)`:
+Three anti-patterns, all covered by `implementation-patterns.md > Pattern 6 (Font/Resource Target)`:
 
-- `UIAppFonts` / `ATSApplicationFontsPath` in Info.plist: doesn't work in SPM packages
+- `UIAppFonts` / `ATSApplicationFontsPath` in Info.plist: doesn't work for SwiftPM target resources
 - `.copy("Fonts")` in `Package.swift` resources: breaks `Bundle.module` lookup
-- `Bundle.main.urls(...)` inside the package: wrong bundle for SPM resources
+- `Bundle.main.urls(...)` inside the target: wrong bundle for SwiftPM resources
 
 DO: `.process("Fonts")` in resources, `CTFontManagerRegisterFontsForURL` against `Bundle.module`, called from app init before any UI renders. Full implementation in `implementation-patterns.md > Pattern 6`.
 
@@ -155,12 +159,14 @@ Each anti-pattern above is mechanically checkable; the fixes are conforming when
 - **No inline top-level arrays.** The three top-level manifest arrays use the closure-with-local-variables form, never a bare array literal:
 
 ```bash
-grep -nE 'let (deps|allProducts|targets)[^=]*=[[:space:]]*\[' Packages/Package.swift Package.swift
+MANIFEST=Package.swift
+[ -f "$MANIFEST" ] || MANIFEST=Packages/Package.swift
+grep -nE 'let (deps|allProducts|targets)[^=]*=[[:space:]]*\[' "$MANIFEST"
 ```
 
   Output MUST be empty (each should read `let deps: [...] = {`), per the closure-with-locals fix.
 
-- **No Info.plist font registration in packages.** Packages register fonts via CoreText, never the plist keys or `.copy("Fonts")`:
+- **No Info.plist font registration in SwiftPM targets.** Targets register fonts via CoreText, never the plist keys or `.copy("Fonts")`:
 
 ```bash
 grep -rnE 'UIAppFonts|ATSApplicationFontsPath|\.copy\("Fonts"\)' Packages/
@@ -171,10 +177,26 @@ grep -rnE 'UIAppFonts|ATSApplicationFontsPath|\.copy\("Fonts"\)' Packages/
 - **Every source target has a matching test target.** For each `Target.target(name: "X")` there is a `Target.testTarget(name: "XTests")`. List the names and confirm no source target lacks its pair:
 
 ```bash
-grep -oE 'Target\.(target|testTarget)\(name: "[^"]+"' Packages/Package.swift
+PACKAGE_ROOT=.
+[ -f Package.swift ] || PACKAGE_ROOT=Packages
+swift package --package-path "$PACKAGE_ROOT" describe --type json | jq -r '
+  .targets as $targets
+  | [$targets[] | select(.type == "test") | .name] as $tests
+  | $targets[]
+  | select(.type == "library" or .type == "executable")
+  | . as $source
+  | select(($tests | index($source.name + "Tests")) == null)
+  | .name
+'
 ```
 
-  Every non-test target name MUST have a corresponding `<name>Tests`.
+  Output MUST be empty. Every source target name has a corresponding
+  `<name>Tests` target.
 
-- **Observable checklist** for the structural anti-patterns no grep settles, each a clear pass/fail: no "God package" mixing unrelated concerns (Models, Views, Networking, Database under one target); no circular dependency between two packages (the graph is a DAG); no feature target lists another feature target as a dependency (coordination goes through a parent/protocol package); and every cross-package symbol use has an explicit `import` of the package that declares it, never a reliance on a transitive import.
+  `swift package describe` names a library target `library`; the value `regular` belongs to
+  `dump-package` and never occurs in this output, so a filter on it checks no library at all
+  and passes whatever the package holds. To prove the command is not vacuous, count what it
+  selects: the number of `library` and `executable` targets MUST equal the number of source
+  targets the manifest declares.
 
+- **Observable checklist** for the structural anti-patterns no grep settles, each a clear pass/fail: no "god target" mixing unrelated concerns (Models, Views, Networking, Database under one target); no circular dependency between two targets (the graph is a DAG); no feature target lists another feature target as a dependency (coordination goes through a parent/protocol target); and every cross-target symbol use has an explicit `import` of the module that declares it, never a reliance on a transitive import.

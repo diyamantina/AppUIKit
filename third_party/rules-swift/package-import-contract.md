@@ -1,4 +1,4 @@
-# Per-Package Import Contract
+# Per-Target Import Contract
 
 The rule for what each SPM target may `import`. Tiledown is a monorepo from day one with many targets in one package, and the engine (`TileKit`) and CLI (`tile-down`) are already two targets, so this contract applies now and governs every target added to the manifest.
 
@@ -33,22 +33,29 @@ Before adding an `import X` line to a producer target, ask:
 1. Is `X` external (Foundation, a system framework, ArgumentParser, Testing, a vetted third-party dependency)? Allowed.
 2. Is the target an `executableTarget` / composition root (for example the `tile-down` CLI)? Allowed; the composition root wires the universe.
 3. Is `X` a foundation-tier target that is foundation-only by construction (shared constants, value types, read-only diagnostics)? Allowed.
-4. Is `X` a protocol-seam package (foundation-only by contract, carrying only protocols and value types)? Allowed.
+4. Is `X` the `SharedProtocols` seam target (foundation-only by contract, carrying only protocols and value types)? Allowed.
 5. Otherwise: **STOP.** Surface the situation; do not proceed. Importing another producer's concrete target is forbidden. Route the dependency through a protocol seam; the composition root supplies the concrete via injection.
 
-If you proceed past the stop rule, you have coupled two producers, which is exactly the coupling this rule exists to prevent. Every package should keep full autonomy, every dependency injectable, so any package can be pulled out of the monorepo at any time.
+If you proceed past the stop rule, you have coupled two producers, which is exactly
+the coupling this rule exists to prevent. Every target keeps full autonomy and
+every dependency is injectable, so the target can be lifted into a standalone
+package at any time.
 
 ## The rules
 
-1. **External primitives are always allowed.** `Foundation`, `os`, `OSLog`, `Combine`, system frameworks, `ArgumentParser`, `Testing`, `XCTest`, and vetted third-party SPM products are ambient and never count as a violation.
-2. **A producer target may import its own protocol-seam companion.** That is the foundation-only protocol and value-type seam the producer publishes.
-3. **A producer target may import other protocol-seam targets.** They are foundation-only by construction; importing one carries no behavioural coupling.
-4. **A producer target may not import another producer (feature) target.** Cross-feature coupling goes through protocols defined in a seam package; the concrete is supplied at the composition root.
-5. **A producer target may not depend on a concrete writer.** Consumers hold the protocol type from the seam package; the binary supplies the live implementation.
-6. **Read-only foundation infrastructure can be imported widely** (embedded resources, read-only diagnostics). Treat it like Foundation.
-7. **Composition roots can import anything.** The CLI and any other app/binary wire the live concretes and pass them down.
-8. **No singletons reachable from producer code.** No `static let shared = X()`, no static config accessors. Pass the value as a parameter. The composition root constructs once and threads it down.
-9. **A "this singleton is sanctioned" argument is not a get-out.** Even where a singleton would be technically acceptable, the project rule is strict dependency injection.
+1. **Declared external primitives are allowed when they build on the target's
+   supported platforms.** Foundation, system frameworks, and vetted third-party
+   products still appear in the target's explicit dependency/platform contract;
+   test frameworks belong in test targets, not production producers.
+2. **A producer target may import `SharedProtocols`.** It is foundation-only by
+   construction and carries the named cross-target contracts and their supporting
+   value types.
+3. **A producer target may not import another producer (feature) target.** Cross-feature coupling goes through protocols defined in `SharedProtocols`; the concrete is supplied at the composition root.
+4. **A producer target may not depend on a concrete writer.** Consumers hold the protocol type from `SharedProtocols`; the binary supplies the live implementation.
+5. **Read-only foundation infrastructure can be imported widely** (embedded resources, read-only diagnostics). Treat it like Foundation.
+6. **Composition roots can import anything.** The CLI and any other app/binary wire the live concretes and pass them down.
+7. **No singletons reachable from producer code.** No `static let shared = X()`, no static config accessors. Pass the value as a parameter. The composition root constructs once and threads it down.
+8. **A "this singleton is sanctioned" argument is not a get-out.** Even where a singleton would be technically acceptable, the project rule is strict dependency injection.
 
 ## What this rule does not say
 
@@ -73,10 +80,13 @@ Two checks back the contract:
 - A source-import audit: grep `^import` lines per target and fail if a consumer imports a forbidden producer.
 - A portability check: copy a target plus its declared transitive deps into a temporary directory, generate a minimal `Package.swift`, and run `swift build`. Green means the target genuinely lifts standalone with only its declared deps. Sweep across every producer target in CI.
 
-## When auditing the packages
+## When auditing the targets
 
 1. List every target.
-2. For each, run `grep -h '^import ' Sources/<Target>/**/*.swift | sort -u` to see actual imports.
+2. For each, run
+   `find Sources/<Target> -name '*.swift' -exec grep -h '^import ' {} + | sort -u`
+   (or use `Packages/Sources/<Target>` in a project monorepo) to see actual
+   imports.
 3. Compare against the contract. Producer importing another producer is a violation. Producer importing a concrete writer is a violation. A singleton reachable inside a producer is a violation.
 4. Open an issue or PR for each violation, smallest first.
 
@@ -114,5 +124,5 @@ This does not ban closures as method parameters or property values; `onProgress:
 
 - [dependency-injection.md](dependency-injection.md): underlying DI principles
 - [shared-protocols.md](shared-protocols.md): where the protocol seams live
-- [package-architecture.md](package-architecture.md): package layers and granularity
+- [package-architecture.md](package-architecture.md): target layers and granularity
 - [package-structure.md](package-structure.md): repository and manifest layout

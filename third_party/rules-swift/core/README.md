@@ -31,4 +31,4 @@ Point your agent (or yourself) at this directory as always-loaded context. The e
 
 ## License
 
-Prose under CC BY 4.0, any shipped code under MIT. See `LICENSE.md`.
+Prose under CC BY 4.0, any shipped code under MIT. See [LICENSE](LICENSE).

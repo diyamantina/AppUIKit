@@ -9,7 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run the public-safe leak gate
-        run: sh scripts/leak-gate.sh
-      - name: Run the namespacing gate
-        run: sh scripts/check-namespacing.sh
+        with:
+          fetch-depth: 0        # diff-based changelog and VERSION gates need history
+      - name: Run the complete repository gate
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          [ -n "$base" ] || base="${{ github.event.before }}"
+          case "$base" in ""|0000000000000000000000000000000000000000) base=HEAD~1 ;; esac
+          sh scripts/check-repo.sh "$base"

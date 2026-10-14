@@ -8,20 +8,20 @@ Three patterns for the app entry point: SwiftUI (minimal App shell), UIKit (Scen
 
 ### Pattern 1: SwiftUI Apps (Minimal App Shell)
 
-SwiftUI app targets MUST be minimal shells that import a feature package and display a view.
+SwiftUI app targets MUST be minimal shells that import a feature target's module and display a view.
 
 #### iOS App Target (iosApp or iOSApp)
 
 ```swift
 // Apps/iosApp/iosApp/iosAppApp.swift
-import AppFeature  // ← Import the feature package
+import AppFeature  // ← Import the feature target's module
 import SwiftUI
 
 @main
 struct iosAppApp: App {
     var body: some Scene {
         WindowGroup {
-            AppView()  // ← Use the view from the feature package
+            AppView()  // ← Use the view from the feature target
         }
     }
 }
@@ -31,7 +31,7 @@ struct iosAppApp: App {
 
 ```swift
 // Apps/macApp/macApp/macAppApp.swift
-import AppFeature  // ← Same feature package as iOS
+import AppFeature  // ← Same feature target as iOS
 import SwiftUI
 
 @main
@@ -59,9 +59,9 @@ Apps/
 
 Rules:
 1. App targets contain only the `@main` struct, `import AppFeature`, and `AppView()`.
-2. All UI logic lives in the feature package (e.g. `AppFeature`).
-3. Both iOS and macOS targets use the same feature package.
-4. The feature package exports `AppView` (a SwiftUI `View`).
+2. All UI logic lives in the feature target (e.g. `AppFeature`).
+3. Both iOS and macOS app targets use the same feature target.
+4. The feature target exports `AppView` (a SwiftUI `View`).
 5. Font registration (if needed) goes in `init()` before body
 
 #### Font Registration in SwiftUI App
@@ -69,7 +69,7 @@ Rules:
 ```swift
 // Apps/iosApp/iosApp/iosAppApp.swift
 import AppFeature
-import AppFont  // ← Import font package
+import AppFont  // ← Import font target's module
 import SwiftUI
 
 @main
@@ -90,7 +90,7 @@ struct iosAppApp: App {
 
 ### Pattern 2: UIKit Apps (iOS - SceneDelegate Pattern)
 
-UIKit app targets MUST delegate to a feature package for window creation.
+UIKit app targets MUST delegate to a feature target for window creation.
 
 **Reference layout:** `Apps/App/UIKitApp/`
 
@@ -126,7 +126,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 ```swift
 // Apps/UIKitApp/SceneDelegate.swift
-import CanvasFeature  // ← Import the feature package (NOT "Canvas")
+import CanvasFeature  // ← Import the feature target's module (NOT "Canvas")
 import UIKit
 
 @MainActor
@@ -156,15 +156,15 @@ Apps/
 
 Rules:
 1. AppDelegate handles only app lifecycle (minimal code).
-2. SceneDelegate imports the feature package.
-3. Feature package provides `createMainWindow(for:)` factory function.
-4. Feature package name ends with `Feature` (e.g. `CanvasFeature`, not `Canvas`).
+2. SceneDelegate imports the feature target's module.
+3. The feature target provides `createMainWindow(for:)` factory function.
+4. The feature target name ends with `Feature` (e.g. `CanvasFeature`, not `Canvas`).
 
 ---
 
 ### Pattern 3: AppKit Apps (macOS - NSApplicationDelegate Pattern)
 
-AppKit app targets MUST delegate to a feature package, with menu code in a SEPARATE file.
+AppKit app targets MUST delegate to a feature target, with menu code in a SEPARATE file.
 
 **Reference layout:** `Apps/App/AppKitApp/`
 
@@ -185,7 +185,7 @@ _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
 
 ```swift
 // Apps/AppKitApp/AppDelegate.swift
-import CanvasFeature  // ← Import the feature package (NOT "Canvas")
+import CanvasFeature  // ← Import the feature target's module (NOT "Canvas")
 import Cocoa
 
 @MainActor
@@ -304,14 +304,14 @@ Rules:
 1. AppKit uses `main.swift` + `AppDelegate.swift` (no `@main` on AppDelegate).
 2. Menu code lives in a separate file (`MainMenu.swift`).
 3. Menu code is an extension of `AppDelegate`.
-4. Feature package provides `createWindowController()` factory function.
-5. Feature package name MUST end with `Feature` (e.g., `CanvasFeature`, NOT `Canvas`)
+4. The feature target provides `createWindowController()` factory function.
+5. The feature target name MUST end with `Feature` (e.g., `CanvasFeature`, NOT `Canvas`)
 
 ---
 
-### Feature Package Exports
+### Feature Target Exports
 
-The feature package (e.g., `AppFeature`, `CanvasFeature`) MUST export:
+The feature target (e.g., `AppFeature`, `CanvasFeature`) MUST export:
 
 #### For SwiftUI
 
@@ -368,13 +368,12 @@ public enum CanvasFeature {
 
 ### App Target Checklist
 
-- [ ] SwiftUI: App file has ONLY `import FeaturePackage` + `FeatureView()`
-- [ ] SwiftUI: Both iOS and macOS use the SAME feature package
-- [ ] UIKit: SceneDelegate imports feature package and uses factory
-- [ ] AppKit: AppDelegate imports feature package and uses factory
+- [ ] SwiftUI: App file has ONLY the feature-module import plus `FeatureView()`
+- [ ] SwiftUI: Both iOS and macOS use the SAME feature target
+- [ ] UIKit: SceneDelegate imports the feature module and uses its factory
+- [ ] AppKit: AppDelegate imports the feature module and uses its factory
 - [ ] AppKit: Menu code is in SEPARATE `MainMenu.swift` file
 - [ ] AppKit: `main.swift` exists with `NSApplicationMain`
-- [ ] Feature package name ends with `Feature` (NOT raw name like `Canvas`)
-- [ ] Feature package exports appropriate factory functions
+- [ ] Feature target name ends with `Feature` (NOT raw name like `Canvas`)
+- [ ] Feature target exports appropriate factory functions
 - [ ] Font registration (if needed) happens in app init BEFORE UI
-

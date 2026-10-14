@@ -231,7 +231,9 @@ Conforms when the manifest's three top-level arrays are built the closure-with-l
 - **Each array opens a closure, not a bracket.** `deps`, `allProducts`, and `targets` read `let <name>: [...] = {` and return their grouped concatenation:
 
 ```bash
-grep -nE 'let (deps|allProducts|targets)[^=]*=[[:space:]]*\[' Packages/Package.swift
+MANIFEST=Package.swift
+[ -f "$MANIFEST" ] || MANIFEST=Packages/Package.swift
+grep -nE 'let (deps|allProducts|targets)[^=]*=[[:space:]]*\[' "$MANIFEST"
 ```
 
   Output MUST be empty. A hit means an array was written as an inline `[...]` literal, the anti-pattern this file replaces.
@@ -243,4 +245,3 @@ grep -nE 'let (deps|allProducts|targets)[^=]*=[[:space:]]*\[' Packages/Package.s
 ## See also
 
 - [`core/folder-grouping.md`](../core/folder-grouping.md): when many single-file targets share a semantic kind (e.g. 27 importers, 5 renderers), they can colocate under a single parent folder using `path:` + disjoint `sources:` declarations. A `flatImporter(_:in:dependencies:)` helper is the worked example: 26 single-file importer targets share `Sources/Import/Importers/<cluster>/` paths while remaining independent SPM targets. The closure-with-local-variables pattern above still applies; the helper just returns a `Target.target(...)` with the path/sources baked in.
-
