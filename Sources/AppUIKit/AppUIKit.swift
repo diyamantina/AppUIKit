@@ -337,6 +337,10 @@ public enum AppUIKit {
     // Application lifecycle, scenes and input that only UIKit has.
     public typealias AppUIApplicationDelegate = UIApplicationDelegate
     public typealias AppUIWindowSceneDelegate = UIWindowSceneDelegate
+    public typealias AppUIScene = UIScene
+    public typealias AppUISceneSession = UISceneSession
+    public typealias AppUISceneConfiguration = UISceneConfiguration
+    public typealias AppUICommand = UICommand
     public typealias AppUITouch = UITouch
     public typealias AppUIKeyCommand = UIKeyCommand
     public typealias AppUIHoverGestureRecognizer = UIHoverGestureRecognizer
