@@ -22,6 +22,12 @@ Reusable controls and editor surfaces are deliberately outside this package.
   views, stacks, and image views (with `StackAxis` / `StackAlignment`).
 - `AppUIKit.Pasteboard`, `AppUIKit.VisualEffects`, `AppUIKit.LayoutDirection`, `AppUIKit.TooltipHelper`,
   `AppUIKit.KeyboardShortcuts`, and `appui*` view/color convenience extensions.
+- Chrome helpers for code written once against the aliases: a control's primary action and tooltip
+  (`appuiSetPrimaryAction(target:action:)`, `appuiToolTip`), a label's text and line limit (`appuiText`,
+  `appuiMaximumLines`, `appuiConfigureAsLabel()`), a segmented control's segments and selection
+  (`appuiSetSegments(_:)`, `appuiSelectedSegment`), a button's symbol and pressed state (`appuiSetSymbol(_:description:)`,
+  `appuiIsSelected`, `appuiMakeToggle()`, `appuiMakeBorderless()`), an image view's tint (`appuiContentTintColor`), a
+  view's opacity (`appuiAlpha`) and a stack's insets (`appuiEdgeInsets`).
 - `isAppKit` / `isUIKit` platform flags.
 
 `import AppUIKit` also re-exports the platform UI framework and Core Graphics, so a consumer drawing in a

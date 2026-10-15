@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AppUIRepresentable`, a SwiftUI view hosting a platform view with `makeAppUIView` and `updateAppUIView` on both frameworks.
 - AppKit-only `AppUIValidatedUserInterfaceItem`, `AppUIText`, `AppUIRulerView` and `AppUIBitmapImageRep`.
 - `AppUIImage.appUISymbol(_:description:)`, an SF Symbol on AppKit and UIKit alike.
+- Chrome helpers, so a status line, a segmented control, a palette button and a list row are written once: `AppUIControl.appuiSetPrimaryAction(target:action:)` and `appuiToolTip`; `AppUILabel.appuiText`, `appuiMaximumLines` and `appuiConfigureAsLabel()`; `AppUISegmentedControl.appuiSetSegments(_:)`, `appuiSegmentCount`, `appuiSegmentTitle(at:)` and `appuiSelectedSegment`; `AppUIButton.appuiSetSymbol(_:description:)`, `appuiSymbolImage`, `appuiIsSelected`, `appuiMakeToggle()` and `appuiMakeBorderless()`; `AppUIImageView.appuiContentTintColor`; `AppUIView.appuiAlpha`; `AppUIStackView.appuiEdgeInsets`.
 
 ## [0.2.0] - 2026-09-16
 
