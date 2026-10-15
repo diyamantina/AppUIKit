@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AppUIImage.appUISymbol(_:description:)`, an SF Symbol on AppKit and UIKit alike.
 - Chrome helpers, so a status line, a segmented control, a palette button and a list row are written once: `AppUIControl.appuiSetPrimaryAction(target:action:)` and `appuiToolTip`; `AppUILabel.appuiText`, `appuiMaximumLines` and `appuiConfigureAsLabel()`; `AppUISegmentedControl.appuiSetSegments(_:)`, `appuiSegmentCount`, `appuiSegmentTitle(at:)` and `appuiSelectedSegment`; `AppUIButton.appuiSetSymbol(_:description:)`, `appuiSymbolImage`, `appuiIsSelected`, `appuiMakeToggle()` and `appuiMakeBorderless()`; `AppUIImageView.appuiContentTintColor`; `AppUIView.appuiAlpha`; `AppUIStackView.appuiEdgeInsets`.
 
+- `AppUITableViewDiffableDataSource` (`NSTableViewDiffableDataSource`, `UITableViewDiffableDataSource`) and `AppUIDiffableSnapshot` (`NSDiffableDataSourceSnapshot`), so a table keyed by stable identifiers is driven by snapshots on AppKit and UIKit alike.
+
 ## [0.2.0] - 2026-09-16
 
 ### Added

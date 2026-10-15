@@ -100,6 +100,10 @@ public enum AppUIKit {
     public typealias AppUITableCellView = NSTableCellView
     public typealias AppUIOutlineView = NSOutlineView
 
+    // Diffable table data: the data source is the platform's; the snapshot type is the same generic type on both frameworks.
+    public typealias AppUITableViewDiffableDataSource<Section: Hashable & Sendable, Item: Hashable & Sendable> = NSTableViewDiffableDataSource<Section, Item>
+    public typealias AppUIDiffableSnapshot<Section: Hashable & Sendable, Item: Hashable & Sendable> = NSDiffableDataSourceSnapshot<Section, Item>
+
     // Images and graphics.
     public typealias AppUIImage = NSImage
     public typealias AppUIImageView = NSImageView
@@ -250,6 +254,10 @@ public enum AppUIKit {
     public typealias AppUITableViewController = UITableViewController
     public typealias AppUICollectionView = UICollectionView
     public typealias AppUICollectionViewCell = UICollectionViewCell
+
+    // Diffable table data: the data source is the platform's; the snapshot type is the same generic type on both frameworks.
+    public typealias AppUITableViewDiffableDataSource<Section: Hashable & Sendable, Item: Hashable & Sendable> = UITableViewDiffableDataSource<Section, Item>
+    public typealias AppUIDiffableSnapshot<Section: Hashable & Sendable, Item: Hashable & Sendable> = NSDiffableDataSourceSnapshot<Section, Item>
 
     // Images and graphics.
     public typealias AppUIImage = UIImage
