@@ -19,6 +19,22 @@ struct AppUIKitTests {
         #expect(found?.lineSpacing == 6)
     }
 
+    #if os(macOS)
+        @MainActor
+        @Test func `an image shared from a view in no window is copied to the pasteboard it is given, not lost, and not to the person's own`() throws {
+            let board = AppUIPasteboard.withUniqueName()
+            defer { board.releaseGlobally() }
+            let image = AppUIImage(size: CGSize(width: 4, height: 4), flipped: false) { rect in
+                AppUIColor.red.setFill()
+                rect.fill()
+                return true
+            }
+            AppUIKit.Sharing.share(image: image, from: AppUIView(frame: .zero), fallback: board)
+            let copied = try #require(board.readObjects(forClasses: [NSImage.self]) as? [NSImage])
+            #expect(copied.count == 1 && copied[0].size == image.size)
+        }
+    #endif
+
     @Test func `the version is set`() {
         #expect(!AppUIKit.version.isEmpty)
     }

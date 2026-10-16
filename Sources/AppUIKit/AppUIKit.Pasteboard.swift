@@ -28,6 +28,20 @@ public extension AppUIKit {
             #endif
         }
 
+        /// Copy an image to a pasteboard, the system's by default.
+        ///
+        /// - Parameters:
+        ///   - image: The image to copy.
+        ///   - pasteboard: Where the image goes; a test gives its own so the person's clipboard is not touched.
+        public static func copy(_ image: AppUIImage, to pasteboard: AppUIPasteboard = .general) {
+            #if os(macOS)
+                pasteboard.clearContents()
+                pasteboard.writeObjects([image])
+            #else
+                pasteboard.image = image
+            #endif
+        }
+
         /// Get text from the system pasteboard.
         ///
         /// - Returns: The text from the pasteboard, or nil if unavailable.

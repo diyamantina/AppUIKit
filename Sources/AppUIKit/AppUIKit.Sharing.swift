@@ -40,6 +40,35 @@ public extension AppUIKit {
             #endif
         }
 
+        /// Shares an image from `anchor`: the system's sharing menu, or when the anchor is not in a presentable window hierarchy the image is copied instead, so
+        /// the action is never inert.
+        ///
+        /// - Parameters:
+        ///   - image: The image to share.
+        ///   - anchor: The view the menu comes out of.
+        ///   - fallback: Where the image is copied when nothing can be presented; the system pasteboard by default.
+        @MainActor
+        public static func share(image: AppUIImage, from anchor: AppUIView, fallback: AppUIPasteboard = .general) {
+            #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+                guard anchor.window != nil else {
+                    AppUIKit.Pasteboard.copy(image, to: fallback)
+                    return
+                }
+                let picker = NSSharingServicePicker(items: [image])
+                let sourceRect = anchor.bounds.isEmpty ? CGRect(x: 0, y: 0, width: 1, height: 1) : anchor.bounds
+                picker.show(relativeTo: sourceRect, of: anchor, preferredEdge: .minY)
+            #elseif canImport(UIKit)
+                guard let presenter = presenter(for: anchor) else {
+                    AppUIKit.Pasteboard.copy(image, to: fallback)
+                    return
+                }
+                let controller = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+                controller.popoverPresentationController?.sourceView = anchor
+                controller.popoverPresentationController?.sourceRect = anchor.bounds.isEmpty ? CGRect(x: 0, y: 0, width: 1, height: 1) : anchor.bounds
+                presenter.present(controller, animated: true)
+            #endif
+        }
+
         #if canImport(UIKit)
             private static func presenter(for view: AppUIView) -> UIViewController? {
                 var responder: UIResponder? = view
