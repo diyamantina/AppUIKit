@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AppUIImage.appUISymbol(_:description:)`, an SF Symbol on AppKit and UIKit alike.
 - Chrome helpers, so a status line, a segmented control, a palette button and a list row are written once: `AppUIControl.appuiSetPrimaryAction(target:action:)` and `appuiToolTip`; `AppUILabel.appuiText`, `appuiMaximumLines` and `appuiConfigureAsLabel()`; `AppUISegmentedControl.appuiSetSegments(_:)`, `appuiSegmentCount`, `appuiSegmentTitle(at:)` and `appuiSelectedSegment`; `AppUIButton.appuiSetSymbol(_:description:)`, `appuiSymbolImage`, `appuiIsSelected`, `appuiMakeToggle()` and `appuiMakeBorderless()`; `AppUIImageView.appuiContentTintColor`; `AppUIView.appuiAlpha`; `AppUIStackView.appuiEdgeInsets`.
 
+- Text entry, written once: `AppUITextField.appuiString`, `appuiPlaceholder` and `appuiSetCommitAction(target:action:)` (Return and loss of focus), and `AppUIViewController.appuiPromptForText(title:message:placeholder:initialText:confirmTitle:cancelTitle:fieldIdentifier:completion:)`, an alert with one text field (a sheet with an accessory field on AppKit, an alert controller on UIKit) that answers the text or `nil`.
+
+- `AppUIView.setAXElement()` and `setAXCell(...)`: a custom drawing view or a table cell appears in the accessibility tree on AppKit (an `NSView` that draws itself is not an element until it says so), and `AppUIButton.appuiIsSelected` now sets the selected accessibility state on AppKit, so a UI test and VoiceOver find and read them as on UIKit.
+
 - `AppUITableViewDiffableDataSource` (`NSTableViewDiffableDataSource`, `UITableViewDiffableDataSource`) and `AppUIDiffableSnapshot` (`NSDiffableDataSourceSnapshot`), so a table keyed by stable identifiers is driven by snapshots on AppKit and UIKit alike.
 
 ## [0.2.0] - 2026-09-16
