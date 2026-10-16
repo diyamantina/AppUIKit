@@ -30,6 +30,24 @@ struct AppUIKitTextPromptTests {
         #expect(!AppUITextField().appuiIsEditing)
     }
 
+    @Test func `ending the editing of a text field that is not being edited does nothing`() {
+        let field = AppUITextField()
+        field.appuiEndEditing()
+        #expect(!field.appuiIsEditing)
+    }
+
+    #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+        @Test func `ending the editing of a field in a window releases its field editor`() {
+            let window = AppUIWindow(contentRect: AppUIRect(x: 0, y: 0, width: 300, height: 200), styleMask: [.titled], backing: .buffered, defer: false)
+            let field = AppUITextField(frame: AppUIRect(x: 10, y: 10, width: 200, height: 24))
+            window.contentView?.addSubview(field)
+            #expect(window.makeFirstResponder(field), "the control: the field takes focus")
+            #expect(field.appuiIsEditing, "the control: focus gives it a field editor")
+            field.appuiEndEditing()
+            #expect(!field.appuiIsEditing, "the field editor is released, so an owner that skips a field while it is edited refreshes it again")
+        }
+    #endif
+
     @Test func `a text field sends its commit action to one target, and a later target replaces it`() {
         let field = AppUITextField()
         let first = Receiver(), second = Receiver()
