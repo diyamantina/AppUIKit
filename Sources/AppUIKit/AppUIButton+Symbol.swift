@@ -38,6 +38,9 @@ public extension AppUIButton {
         set {
             #if canImport(AppKit) && !targetEnvironment(macCatalyst)
                 state = newValue ? .on : .off
+                // UIKit's `isSelected` carries the selected accessibility state; an AppKit toggle says it with its on state only, so VoiceOver and a UI test (`isSelected`) read it
+                // from here as well.
+                setAccessibilitySelected(newValue)
             #elseif canImport(UIKit)
                 isSelected = newValue
             #endif

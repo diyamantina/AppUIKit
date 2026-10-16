@@ -31,4 +31,30 @@ public extension AppUIView {
             accessibilityLabel = label
         #endif
     }
+
+    /// Make a custom drawing view appear in the accessibility tree, so a UI test and an assistive technology find it by its identifier.
+    ///
+    /// An `NSView` that draws itself is not an accessibility element until it says so (`setAccessibilityElement(_:)`), and an element needs a role to be listed; the identifier
+    /// alone
+    /// leaves the view out of the tree on macOS. A `UIView` that is not an element still shows its identifier to a UI test, and making it one would hide its subviews from
+    /// VoiceOver,
+    /// so UIKit is left as it is.
+    func setAXElement() {
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            setAccessibilityElement(true)
+            setAccessibilityRole(.image)
+        #endif
+    }
+
+    /// Make a table cell's content view the accessibility element of its row, so its identifier reaches a UI test.
+    ///
+    /// A view-based `NSTableView` lists a cell for each row, but an identifier set on the view that fills the cell is not carried to that cell unless the view is an element with
+    /// the role of a cell.
+    /// A `UITableViewCell` is already an element and carries its own identifier, so UIKit is left as it is.
+    func setAXCell() {
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            setAccessibilityElement(true)
+            setAccessibilityRole(.cell)
+        #endif
+    }
 }
