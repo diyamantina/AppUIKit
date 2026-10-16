@@ -176,6 +176,8 @@ public enum AppUIKit {
     // Attributed strings.
     public typealias AppUIMutableAttributedString = NSMutableAttributedString
     public typealias AppUIAttributedString = NSAttributedString
+    public typealias AppUIParagraphStyle = NSParagraphStyle
+    public typealias AppUIMutableParagraphStyle = NSMutableParagraphStyle
 
     // Other.
     public typealias AppUICoder = NSCoder
@@ -329,6 +331,8 @@ public enum AppUIKit {
     // Attributed strings.
     public typealias AppUIMutableAttributedString = NSMutableAttributedString
     public typealias AppUIAttributedString = NSAttributedString
+    public typealias AppUIParagraphStyle = NSParagraphStyle
+    public typealias AppUIMutableParagraphStyle = NSMutableParagraphStyle
 
     // Other.
     public typealias AppUICoder = NSCoder

@@ -11,6 +11,14 @@ struct AppUIKitTests {
         #expect(isAppKit != isUIKit)
     }
 
+    @Test func `a paragraph style made through the aliases carries its line spacing into an attributed string`() {
+        let style = AppUIMutableParagraphStyle()
+        style.lineSpacing = 6
+        let text = AppUIAttributedString(string: "two\nlines", attributes: [.paragraphStyle: style])
+        let found = text.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? AppUIParagraphStyle
+        #expect(found?.lineSpacing == 6)
+    }
+
     @Test func `the version is set`() {
         #expect(!AppUIKit.version.isEmpty)
     }
