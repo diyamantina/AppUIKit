@@ -37,6 +37,24 @@ public extension AppUILabel {
         }
     }
 
+    /// Whether the text is centred in the label (`alignment` of AppKit's text field, `textAlignment` of UIKit's label); the other is the natural alignment of the language.
+    var appuiCentersText: Bool {
+        get {
+            #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+                return alignment == .center
+            #elseif canImport(UIKit)
+                return textAlignment == .center
+            #endif
+        }
+        set {
+            #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+                alignment = newValue ? .center : .natural
+            #elseif canImport(UIKit)
+                textAlignment = newValue ? .center : .natural
+            #endif
+        }
+    }
+
     /// Makes the view a read-only label. AppKit's `AppUILabel` is a text field, editable, selectable, bordered and drawn on a background until told otherwise; UIKit's is a label
     /// already, and here it is told to follow the person's text size.
     func appuiConfigureAsLabel() {
