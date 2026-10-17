@@ -59,6 +59,10 @@ public enum AppUIKit {
 
 // MARK: - Type aliases (AppUI*)
 
+/// Coordinates reading and writing of files, and makes a zip of a folder for uploading (`.forUploading`); the same type on every Apple platform. A Foundation type named
+/// here so the gate that keeps `NS` and `UI` names out of code written against AppUIKit has one place to look.
+public typealias AppUIFileCoordinator = NSFileCoordinator
+
 #if canImport(AppKit) && !targetEnvironment(macCatalyst)
 
     // View types.
