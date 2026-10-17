@@ -22,14 +22,26 @@ public enum AppUISystemTextSize {
         #endif
     }
 
-    /// Calls `handler` with the new percentage each time the person changes the size in the system's settings. Keep the returned token for as long as the calls are wanted.
-    public static func observe(_ handler: @escaping @MainActor (Int) -> Void) -> any NSObjectProtocol {
+    /// The call that tells a handler about the system's size; it stops when this is dropped.
+    public final class Observation {
+        private let token: any NSObjectProtocol
+
+        fileprivate init(token: any NSObjectProtocol) {
+            self.token = token
+        }
+
+        deinit { NotificationCenter.default.removeObserver(token) }
+    }
+
+    /// Calls `handler` with the new percentage each time the person changes the size in the system's settings. Keep the returned observation for as long as the calls are wanted.
+    public static func observe(_ handler: @escaping @MainActor (Int) -> Void) -> Observation {
         #if canImport(UIKit) && !(canImport(AppKit) && !targetEnvironment(macCatalyst))
-            return NotificationCenter.default.addObserver(forName: UIContentSizeCategory.didChangeNotification, object: nil, queue: .main) { _ in
-                MainActor.assumeIsolated { handler(percent) }
-            }
+            let name = UIContentSizeCategory.didChangeNotification
         #else
-            return NSObject()
+            let name = Notification.Name("AppUISystemTextSize.neverPosted")
         #endif
+        return Observation(token: NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { handler(percent) }
+        })
     }
 }
