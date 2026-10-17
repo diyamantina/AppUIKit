@@ -384,6 +384,7 @@ public enum AppUIKit {
     public typealias AppUIDeferredMenuElement = UIDeferredMenuElement
     public typealias AppUIToolbar = UIToolbar
     public typealias AppUIImageSymbolConfiguration = UIImage.SymbolConfiguration
+    public typealias AppUIActivityIndicatorView = UIActivityIndicatorView
     #if canImport(SwiftUI)
         public typealias AppUIViewRepresentable = UIViewRepresentable
         public typealias AppUIHostingController<Content: View> = UIHostingController<Content>
