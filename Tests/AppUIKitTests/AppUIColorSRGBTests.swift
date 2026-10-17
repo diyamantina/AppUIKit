@@ -23,3 +23,18 @@ struct AppUIColorSRGBTests {
         #expect(one != other)
     }
 }
+
+/// The TextKit aliases are the real classes on both frameworks, so a stack made through them is the stack the platform's text view takes.
+@MainActor
+@Suite("AppUI TextKit aliases")
+struct AppUITextKitAliasTests {
+    @Test func `a stack made through the aliases is wired storage to layout to container`() {
+        let storage = AppUITextStorage(string: "abc")
+        let layout = AppUILayoutManager()
+        storage.addLayoutManager(layout)
+        let container = AppUITextContainer(size: AppUISize(width: 100, height: 100))
+        layout.addTextContainer(container)
+        #expect(layout.textStorage === storage && layout.textContainers.first === container)
+        #expect(layout.numberOfGlyphs == 3)
+    }
+}

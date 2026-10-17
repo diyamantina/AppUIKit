@@ -178,6 +178,10 @@ public enum AppUIKit {
     public typealias AppUIAttributedString = NSAttributedString
     public typealias AppUIParagraphStyle = NSParagraphStyle
     public typealias AppUIMutableParagraphStyle = NSMutableParagraphStyle
+    // TextKit, which is the same on both frameworks.
+    public typealias AppUILayoutManager = NSLayoutManager
+    public typealias AppUITextContainer = NSTextContainer
+    public typealias AppUITextStorage = NSTextStorage
 
     // Other.
     public typealias AppUICoder = NSCoder
@@ -333,6 +337,10 @@ public enum AppUIKit {
     public typealias AppUIAttributedString = NSAttributedString
     public typealias AppUIParagraphStyle = NSParagraphStyle
     public typealias AppUIMutableParagraphStyle = NSMutableParagraphStyle
+    // TextKit, which is the same on both frameworks.
+    public typealias AppUILayoutManager = NSLayoutManager
+    public typealias AppUITextContainer = NSTextContainer
+    public typealias AppUITextStorage = NSTextStorage
 
     // Other.
     public typealias AppUICoder = NSCoder

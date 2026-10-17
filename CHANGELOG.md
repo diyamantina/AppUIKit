@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `AppUILayoutManager`, `AppUITextContainer` and `AppUITextStorage` (`NSLayoutManager`, `NSTextContainer`, `NSTextStorage`) on both frameworks, so a text editor that paints behind its glyphs names them through AppUIKit.
 - UIKit-only `UIColor(srgbRed:green:blue:alpha:)` and `redComponent`, `greenComponent`, `blueComponent` and `alphaComponent`, so a palette written against `NSColor`'s names builds the same on UIKit.
 - `AppUIKit.Sharing.share(image:from:fallback:)` and `AppUIKit.Pasteboard.copy(_:to:)` for an image: the system sharing menu from a view, or when the view is in no window the image is copied to the pasteboard given (the system's by default), so sharing is never inert.
 - `AppUIParagraphStyle` and `AppUIMutableParagraphStyle` on both frameworks, so a line spacing or an indent on attributed text is written without naming `NSParagraphStyle`.
