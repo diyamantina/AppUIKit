@@ -18,6 +18,28 @@ public extension AppUISegmentedControl {
         #endif
     }
 
+    /// Turns the segment at `index` on or off: an off segment is drawn dimmed and cannot be chosen (`setEnabled(_:forSegment:)` on AppKit, `setEnabled(_:forSegmentAt:)` on UIKit).
+    /// An index outside the control
+    /// does nothing.
+    func appuiSetSegmentEnabled(_ enabled: Bool, at index: Int) {
+        guard (0 ..< appuiSegmentCount).contains(index) else { return }
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            setEnabled(enabled, forSegment: index)
+        #elseif canImport(UIKit)
+            setEnabled(enabled, forSegmentAt: index)
+        #endif
+    }
+
+    /// Whether the segment at `index` is on; `false` for an index outside the control.
+    func appuiIsSegmentEnabled(at index: Int) -> Bool {
+        guard (0 ..< appuiSegmentCount).contains(index) else { return false }
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            return isEnabled(forSegment: index)
+        #elseif canImport(UIKit)
+            return isEnabledForSegment(at: index)
+        #endif
+    }
+
     /// How many segments the control has.
     var appuiSegmentCount: Int {
         #if canImport(AppKit) && !targetEnvironment(macCatalyst)
