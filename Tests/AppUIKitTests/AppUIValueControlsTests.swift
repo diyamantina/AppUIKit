@@ -48,4 +48,11 @@ struct AppUIValueControlsTests {
         button.appuiSetTitles(["A", "B"], selected: 5)
         #expect(button.selectedIndex == -1)
     }
+
+    @Test func `a colour reads back its sRGB components, and the same numbers go in and come out`() throws {
+        for (red, green, blue, alpha) in [(0.0, 0.0, 0.0, 1.0), (1.0, 0.5, 0.25, 0.5), (0.1, 0.9, 0.3, 1.0)] {
+            let components = try #require(AppUIColor(srgbRed: red, green: green, blue: blue, alpha: alpha).appuiSRGBComponents)
+            #expect(abs(components.red - red) < 1e-6 && abs(components.green - green) < 1e-6 && abs(components.blue - blue) < 1e-6 && abs(components.alpha - alpha) < 1e-6)
+        }
+    }
 }
