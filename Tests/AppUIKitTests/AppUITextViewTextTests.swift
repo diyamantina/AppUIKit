@@ -285,19 +285,6 @@ extension AppUITextViewTextTests {
         textView.appuiScrollToVisible(target)
         let rect = textView.appuiRect(of: target)
         let point = CGPoint(x: rect.minX + 2, y: rect.midY)
-        print(
-            rect,
-            "visible",
-            textView.appuiVisibleRect,
-            "frame",
-            textView.frame,
-            "target",
-            target,
-            "idx",
-            textView.characterIndexForInsertion(at: point),
-            "idx of line top",
-            textView.characterIndexForInsertion(at: CGPoint(x: 20, y: 8))
-        )
         observer.click(at: point, command: false)
         #expect(told.isEmpty)
         observer.click(at: point, command: true)
