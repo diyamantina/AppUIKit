@@ -274,3 +274,21 @@ struct AppUITextViewTextTests {
         }
     }
 #endif
+
+extension AppUITextViewTextTests {
+    @Test func `a command-click tells the character under the pointer, and a plain click tells nothing`() throws {
+        let (textView, container, text) = tallAndWide()
+        var told: [Int] = []
+        let observer = textView.appuiObserveCommandClick { told.append($0) }
+        let target = (text as NSString).range(of: "line 7")
+        let rect = textView.appuiRect(of: target)
+        let point = CGPoint(x: rect.minX + 2, y: rect.midY)
+        observer.click(at: point, command: false)
+        #expect(told.isEmpty)
+        observer.click(at: point, command: true)
+        #expect(told.count == 1)
+        let index = try #require(told.first)
+        #expect(abs(index - target.location) <= 1, "the click was on the first character of line 7: \(index) against \(target.location)")
+        _ = container
+    }
+}
