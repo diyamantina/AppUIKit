@@ -122,6 +122,8 @@ public extension AppUIRowView {
         guard let place = rowPosition(at: point) else { return }
         selectionAnchor = place
         selection = nil
+        // A click in rows that can be edited puts the caret there.
+        caret = isEditable ? place : nil
         redraw()
         onSelectionChange?()
         switch pressCount {

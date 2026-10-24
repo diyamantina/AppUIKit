@@ -78,6 +78,30 @@ open class AppUIRowView: AppUIInteractiveView {
     var horizontalOffset: CGFloat = 0
     var widestRow: CGFloat = 0
     var scrollerDrag: CGFloat?
+    /// Whether the rows can be typed in: a caret is shown, keys move it, and what is typed is given to `onEdit` for its owner to put in the text.
+    public var isEditable = false {
+        didSet {
+            if oldValue != isEditable {
+                redraw()
+            }
+        }
+    }
+
+    /// Where typed text goes when nothing is selected, or nil while nothing is. Set by a click, the arrow keys, and `setCaret`.
+    public internal(set) var caret: AppUIRowPosition? {
+        didSet {
+            if oldValue != caret {
+                redraw()
+            }
+        }
+    }
+
+    /// Told what was typed. The owner changes its text and then shows the rows again and puts the caret where it belongs.
+    public var onEdit: ((AppUIRowEdit) -> Void)?
+    /// Told that Undo or Redo was chosen, and asked whether each can be done, for the menu.
+    public var onUndo: (() -> Void)?
+    public var onRedo: (() -> Void)?
+    public var canUndoRedo: (() -> (undo: Bool, redo: Bool))?
     /// What a touch is doing: a flick still moving the rows, the display link that moves it, and whether the finger went down on the scroller.
     var momentum: AppUIRowMomentum?
     var momentumLink: AnyObject?
@@ -295,7 +319,18 @@ open class AppUIRowView: AppUIInteractiveView {
             }
             _ = first
         }
+        drawCaret(in: context)
         drawScroller(in: context)
+    }
+
+    /// The insertion point: a line the height of the row at the caret, when the rows can be edited and nothing is selected.
+    private func drawCaret(in context: CGContext) {
+        guard isEditable, selection == nil, let caret, visibleRows.contains(caret.row), let cached = cache[caret.row] else { return }
+        let length = (cached.row.text as NSString).length
+        let x = gutterWidth + 6 - horizontalOffset + CTLineGetOffsetForStringIndex(cached.line, min(length, caret.column), nil)
+        let top = CGFloat(Double(caret.row) * Double(rowHeight) - position)
+        context.setFillColor(textColor.cgColor)
+        context.fill(CGRect(x: x, y: top + 1, width: 1.5, height: rowHeight - 2))
     }
 
     private func drawSelection(of number: Int, cached: CachedRow, top: CGFloat, textLeft: CGFloat, in context: CGContext) {
@@ -355,6 +390,9 @@ open class AppUIRowView: AppUIInteractiveView {
         override open func keyDown(with event: NSEvent) {
             let page = bounds.height - rowHeight
             let command = event.modifierFlags.contains(.command)
+            if isEditable, !command, !event.modifierFlags.contains(.control), typed(event) {
+                return
+            }
             switch event.specialKey {
             case .upArrow where command: scroll(byY: -.greatestFiniteMagnitude)
             case .downArrow where command: scroll(byY: .greatestFiniteMagnitude)
@@ -368,8 +406,59 @@ open class AppUIRowView: AppUIInteractiveView {
             }
         }
 
+        /// What a key does to a view that can be edited: moves the caret, or is given to the owner as what was typed. True when it was one of those.
+        private func typed(_ event: NSEvent) -> Bool {
+            if moved(by: event.specialKey) {
+                return true
+            }
+            switch event.specialKey {
+            case .delete: onEdit?(.deleteBackward)
+            case .deleteForward: onEdit?(.deleteForward)
+            case .carriageReturn, .newline, .enter: onEdit?(.newline)
+            case .tab: onEdit?(.insert("  "))
+            case nil:
+                guard let characters = event.characters, Self.isTypedText(characters) else { return false }
+                onEdit?(.insert(characters))
+            default: return false
+            }
+            return true
+        }
+
+        /// The keys that move the caret; true when `key` was one.
+        private func moved(by key: NSEvent.SpecialKey?) -> Bool {
+            switch key {
+            case .leftArrow: moveCaret(by: -1)
+            case .rightArrow: moveCaret(by: 1)
+            case .upArrow: moveCaret(rows: -1)
+            case .downArrow: moveCaret(rows: 1)
+            case .home: moveCaretToRowEdge(end: false)
+            case .end: moveCaretToRowEdge(end: true)
+            default: return false
+            }
+            return true
+        }
+
         @objc open func copy(_: Any?) {
             copySelection()
+        }
+
+        @objc open func paste(_: Any?) {
+            guard isEditable, let text = AppUIKit.Pasteboard.paste(), !text.isEmpty else { return }
+            onEdit?(.insert(text))
+        }
+
+        @objc open func cut(_: Any?) {
+            guard isEditable, selection != nil else { return }
+            copySelection()
+            onEdit?(.deleteBackward)
+        }
+
+        @objc open func undo(_: Any?) {
+            onUndo?()
+        }
+
+        @objc open func redo(_: Any?) {
+            onRedo?()
         }
 
         override open func selectAll(_: Any?) {
@@ -378,7 +467,14 @@ open class AppUIRowView: AppUIInteractiveView {
 
         /// Copy is on when there is a selection; select all is always on.
         @objc open func validateUserInterfaceItem(_ item: any NSValidatedUserInterfaceItem) -> Bool {
-            item.action == #selector(copy(_:)) ? selection != nil : true
+            switch item.action {
+            case #selector(copy(_:)): selection != nil
+            case #selector(paste(_:)): isEditable
+            case #selector(cut(_:)): isEditable && selection != nil
+            case #selector(undo(_:)): isEditable && (canUndoRedo?().undo ?? false)
+            case #selector(redo(_:)): isEditable && (canUndoRedo?().redo ?? false)
+            default: true
+            }
         }
 
         override open func resetCursorRects() {
