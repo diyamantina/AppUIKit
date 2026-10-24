@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Text view helpers: `appuiString`, `appuiSelectedRange`, `appuiTextStorage`, `appuiScrollToVisible(_:)`, `appuiConfigureForCode(font:)`, `appuiObserveEdits(_:)` and `AppUITextView.appuiMakeScrolling()`, so an editor surface is written once for AppKit and UIKit.
+
+### Added
+
 - UIKit-only `AppUIActivityIndicatorView` (`UIActivityIndicatorView`), the spinner `AppUIProgressIndicator` is on AppKit.
 - `AppUILayoutManager`, `AppUITextContainer` and `AppUITextStorage` (`NSLayoutManager`, `NSTextContainer`, `NSTextStorage`) on both frameworks, so a text editor that paints behind its glyphs names them through AppUIKit.
 - UIKit-only `UIColor(srgbRed:green:blue:alpha:)` and `redComponent`, `greenComponent`, `blueComponent` and `alphaComponent`, so a palette written against `NSColor`'s names builds the same on UIKit.

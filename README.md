@@ -22,6 +22,7 @@ Reusable controls and editor surfaces are deliberately outside this package.
   views, stacks, and image views (with `StackAxis` / `StackAlignment`).
 - `AppUIKit.Pasteboard`, `AppUIKit.VisualEffects`, `AppUIKit.LayoutDirection`, `AppUIKit.TooltipHelper`,
   `AppUIKit.KeyboardShortcuts`, and `appui*` view/color convenience extensions.
+- Text view helpers (`AppUITextView+Text.swift`): the text, the selection, the storage, a setup for editing code, the person's edits, and a scrolling text view (`appuiString`, `appuiSelectedRange`, `appuiTextStorage`, `appuiConfigureForCode(font:)`, `appuiObserveEdits(_:)`, `appuiMakeScrolling()`).
 - Chrome helpers for code written once against the aliases: a control's primary action and tooltip
   (`appuiSetPrimaryAction(target:action:)`, `appuiToolTip`), a label's text and line limit (`appuiText`,
   `appuiMaximumLines`, `appuiConfigureAsLabel()`), a segmented control's segments and selection
