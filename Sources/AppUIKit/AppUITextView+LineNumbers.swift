@@ -10,11 +10,20 @@ import Foundation
         private weak var textView: NSTextView?
         private var lines: AppUILineNumbers?
         private nonisolated(unsafe) var editObserver: NSObjectProtocol?
+        private nonisolated(unsafe) var scrollObserver: NSObjectProtocol?
 
         init(scrollView: NSScrollView, textView: NSTextView) {
             self.textView = textView
             super.init(scrollView: scrollView, orientation: .verticalRuler)
             clientView = textView
+            // The scroll view moves what is already drawn in the ruler and draws only the strip that came into view, which leaves the numbers
+            // in the middle where they were, level with other lines. The whole column is drawn again each time the view scrolls.
+            scrollView.contentView.postsBoundsChangedNotifications = true
+            scrollObserver = NotificationCenter.default.addObserver(
+                forName: NSView.boundsDidChangeNotification, object: scrollView.contentView, queue: nil
+            ) { [weak self] _ in
+                MainActor.assumeIsolated { self?.needsDisplay = true }
+            }
             if let storage = textView.textStorage {
                 editObserver = NotificationCenter.default.addObserver(
                     forName: NSTextStorage.didProcessEditingNotification, object: storage, queue: .main
@@ -39,6 +48,13 @@ import Foundation
             if let editObserver {
                 NotificationCenter.default.removeObserver(editObserver)
             }
+            if let scrollObserver {
+                NotificationCenter.default.removeObserver(scrollObserver)
+            }
+        }
+
+        override var isOpaque: Bool {
+            true
         }
 
         /// The lines of the text, found when first needed after a change of the characters.
@@ -84,6 +100,12 @@ import Foundation
                 labels.append((lines.count, extra.offsetBy(dx: origin.x, dy: origin.y)))
             }
             return labels
+        }
+
+        /// Draws the whole column, background and numbers, whatever part of it was marked: the part the system's own drawing leaves between the numbers is
+        /// what showed as bands of another color.
+        override func draw(_: NSRect) {
+            drawHashMarksAndLabels(in: bounds)
         }
 
         override func drawHashMarksAndLabels(in _: NSRect) {

@@ -236,3 +236,41 @@ struct AppUITextViewTextTests {
         textView.appuiUpdateLineNumbers()
     }
 }
+
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+    import AppKit
+
+    extension AppUITextViewTextTests {
+        /// The column, drawn into a bitmap after scrolling, has a number's ink level with every line in view, and none between lines.
+        @Test func `scrolling draws the whole column again, so every line in view has its number`() throws {
+            let (textView, container, _) = tallAndWide()
+            textView.appuiShowsLineNumbers = true
+            let scroll = try #require(textView.enclosingScrollView)
+            let ruler = try #require(scroll.verticalRulerView)
+            let window = NSWindow(contentRect: container.frame, styleMask: [.titled], backing: .buffered, defer: false)
+            window.contentView = container
+            for offset in [0.0, 1000.0, 2300.0] {
+                scroll.contentView.scroll(to: NSPoint(x: 0, y: offset))
+                scroll.reflectScrolledClipView(scroll.contentView)
+                ruler.display()
+                let bitmap = try #require(ruler.bitmapImageRepForCachingDisplay(in: ruler.bounds))
+                ruler.cacheDisplay(in: ruler.bounds, to: bitmap)
+                // A line cut by the top or bottom of the view shows part of its number, so only the lines wholly in view are held to it.
+                let view = textView.appuiVisibleRect
+                let whole = textView.appuiVisibleLineLabels.filter { $0.fragment.minY >= view.minY && $0.fragment.maxY <= view.maxY }
+                for label in whole {
+                    let scale = CGFloat(bitmap.pixelsHigh) / ruler.bounds.height
+                    let y = Int(ruler.convert(NSPoint(x: 0, y: label.fragment.midY), from: textView).y * scale)
+                    let background = bitmap.colorAt(x: 0, y: min(max(y, 0), bitmap.pixelsHigh - 1))
+                    var ink = false
+                    for x in 0 ..< bitmap.pixelsWide where y >= 0 && y < bitmap.pixelsHigh {
+                        if let color = bitmap.colorAt(x: x, y: y), let background, abs(color.brightnessComponent - background.brightnessComponent) > 0.2 {
+                            ink = true
+                        }
+                    }
+                    #expect(ink, "line \(label.number) has no number drawn at \(y) after scrolling to \(offset)")
+                }
+            }
+        }
+    }
+#endif
