@@ -47,9 +47,75 @@ public extension AppUITextView {
         #endif
     }
 
-    /// Scrolls the view so that `range` is on screen.
-    func appuiScrollToVisible(_ range: AppUIRange) {
-        scrollRangeToVisible(range)
+    /// Scrolls the view, up or down and sideways, so that the start of `range` is on screen, and the whole of it when it fits. The text is laid out as far as
+    /// `range` first, because a text view lays out lazily and a request to scroll to text that is not laid out yet lands in the wrong place. With `centered` the
+    /// range is put in the middle of the view, rows above and below it, which is where a person looking for it wants it. On UIKit the text view keeps its
+    /// content as wide as itself, so only the row can be scrolled to, not a column beyond the edge.
+    func appuiScrollToVisible(_ range: AppUIRange, centered: Bool = false) {
+        let rect = appuiRect(of: range)
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            guard let scroll = enclosingScrollView else {
+                scrollToVisible(rect)
+                return
+            }
+            let visible = scroll.documentVisibleRect
+            var origin = visible.origin
+            if centered {
+                origin.y = rect.midY - visible.height / 2
+            } else if rect.minY < visible.minY {
+                origin.y = rect.minY
+            } else if rect.maxY > visible.maxY {
+                origin.y = rect.maxY - visible.height
+            }
+            if rect.minX < visible.minX || rect.minX > visible.maxX - 24 {
+                origin.x = max(0, rect.minX - 24)
+            }
+            origin.y = max(0, min(origin.y, max(0, frame.height - visible.height)))
+            scroll.contentView.scroll(to: origin)
+            scroll.reflectScrolledClipView(scroll.contentView)
+        #elseif canImport(UIKit)
+            var offset = contentOffset
+            if centered {
+                offset.y = rect.midY - bounds.height / 2
+            } else if rect.minY < offset.y {
+                offset.y = rect.minY
+            } else if rect.maxY > offset.y + bounds.height {
+                offset.y = rect.maxY - bounds.height
+            }
+            if rect.minX < offset.x || rect.minX > offset.x + bounds.width - 24 {
+                offset.x = max(0, rect.minX - 24)
+            }
+            offset.y = max(0, min(offset.y, max(0, contentSize.height - bounds.height)))
+            setContentOffset(offset, animated: false)
+        #endif
+    }
+
+    /// The part of the text, in the text view's own coordinates, that can be seen now: the visible part of the scroll view that holds it on AppKit, the part of the
+    /// content inside the bounds on UIKit.
+    var appuiVisibleRect: CGRect {
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            return enclosingScrollView?.documentVisibleRect ?? visibleRect
+        #elseif canImport(UIKit)
+            return CGRect(origin: contentOffset, size: bounds.size)
+        #endif
+    }
+
+    /// The rectangle `range` occupies in the view's own coordinates, with the text laid out as far as it.
+    func appuiRect(of range: AppUIRange) -> CGRect {
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            guard let layout = layoutManager, let container = textContainer else { return .zero }
+            layout.ensureLayout(forCharacterRange: NSRange(location: 0, length: min(NSMaxRange(range), (string as NSString).length)))
+            var rect = layout.boundingRect(forGlyphRange: layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil), in: container)
+            rect.origin.x += textContainerOrigin.x
+            rect.origin.y += textContainerOrigin.y
+            return rect
+        #elseif canImport(UIKit)
+            layoutManager.ensureLayout(forCharacterRange: NSRange(location: 0, length: min(NSMaxRange(range), (text ?? "").utf16.count)))
+            var rect = layoutManager.boundingRect(forGlyphRange: layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil), in: textContainer)
+            rect.origin.x += textContainerInset.left
+            rect.origin.y += textContainerInset.top
+            return rect
+        #endif
     }
 
     /// Sets the view up for editing code and data, where the system's help changes what was typed: no smart quotes or dashes, no autocorrection, spelling or text replacement,

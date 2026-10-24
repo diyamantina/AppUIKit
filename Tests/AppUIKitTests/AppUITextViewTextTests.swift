@@ -136,4 +136,53 @@ struct AppUITextViewTextTests {
         #expect(seen.contains(AppUIRange(location: 6, length: 5)))
         withExtendedLifetime(observer) {}
     }
+
+    /// A text of many lines, the last long enough to need sideways scrolling, in a small view.
+    private func tallAndWide() -> (textView: AppUITextView, container: AppUIView, text: String) {
+        let (textView, container) = AppUITextView.appuiMakeScrolling()
+        container.frame = CGRect(x: 0, y: 0, width: 300, height: 120)
+        textView.appuiConfigureForCode(font: AppUIKit.Fonts.monospaced(ofSize: 13))
+        let lines = (0 ..< 300).map { index in index == 250 ? String(repeating: "x", count: 400) + " target" : "line \(index)" }
+        let text = lines.joined(separator: "\n")
+        textView.appuiString = text
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            container.layoutSubtreeIfNeeded()
+            textView.sizeToFit()
+        #elseif canImport(UIKit)
+            container.layoutIfNeeded()
+        #endif
+        return (textView, container, text)
+    }
+
+    /// The rectangle a range of the text occupies, and the part of the text view that can be seen.
+    private func place(of range: AppUIRange, in textView: AppUITextView) -> (range: CGRect, visible: CGRect) {
+        (textView.appuiRect(of: range), textView.appuiVisibleRect)
+    }
+
+    @Test func `scrolling to a range far down and far to the right puts it in view, both ways`() {
+        let (textView, _, text) = tallAndWide()
+        let target = (text as NSString).range(of: "target")
+        textView.appuiScrollToVisible(target)
+        var place = place(of: target, in: textView)
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            #expect(place.visible.intersects(place.range), "the range is in view: \(place.range) in \(place.visible)")
+            #expect(place.visible.contains(CGPoint(x: place.range.minX + 1, y: place.range.midY)), "its start is in view, not only its edge")
+        #elseif canImport(UIKit)
+            // A UIKit text view keeps its content as wide as itself, so a line wider than the view cannot be scrolled sideways here; the row can be reached.
+            #expect(place.visible.minY <= place.range.midY && place.range.midY <= place.visible.maxY, "its row is in view: \(place.range) in \(place.visible)")
+        #endif
+        // And back to the top, so the first line is in view again.
+        let first = AppUIRange(location: 0, length: 6)
+        textView.appuiScrollToVisible(first)
+        place = self.place(of: first, in: textView)
+        #expect(place.visible.minY <= place.range.midY && place.range.midY <= place.visible.maxY)
+    }
+
+    @Test func `centering puts the range in the middle of the view, rows above and below it`() {
+        let (textView, _, text) = tallAndWide()
+        let target = (text as NSString).range(of: "line 150")
+        textView.appuiScrollToVisible(target, centered: true)
+        let place = place(of: target, in: textView)
+        #expect(abs(place.range.midY - place.visible.midY) < place.visible.height / 4, "centered: \(place.range) in \(place.visible)")
+    }
 }
