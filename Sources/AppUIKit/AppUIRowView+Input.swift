@@ -68,8 +68,31 @@ public extension AppUIRowView {
         return CGRect(x: bounds.width - 10, y: travel * CGFloat(position / maximumPosition), width: 8, height: length)
     }
 
+    /// The height from the top of the view, in points, of the mark of a row: the rows laid along the height, as the knob is.
+    internal func markY(ofRow row: Int) -> CGFloat {
+        guard rowCount > 0 else { return 0 }
+        return CGFloat(Double(min(max(0, row), rowCount - 1)) / Double(rowCount) * Double(bounds.height))
+    }
+
+    /// Draws the marks under the knob. Marks that fall on the same line of pixels are drawn once, so a hundred thousand matches cost a few hundred strokes.
+    internal func drawMarks(in context: CGContext) {
+        guard !marks.isEmpty, rowCount > 0 else { return }
+        var seen = Set<Int>()
+        context.setFillColor(AppUIKit.Colors.label.withAlphaComponent(0.45).cgColor)
+        for mark in marks where !mark.emphasized {
+            let y = markY(ofRow: mark.row)
+            guard seen.insert(Int(y)).inserted else { continue }
+            context.fill(CGRect(x: bounds.width - 10, y: y.rounded(.down), width: 8, height: 2))
+        }
+        context.setFillColor(AppUIKit.Colors.accent.cgColor)
+        for mark in marks where mark.emphasized {
+            context.fill(CGRect(x: bounds.width - 12, y: markY(ofRow: mark.row).rounded(.down) - 1, width: 12, height: 3))
+        }
+    }
+
     internal func drawScroller(in context: CGContext) {
         guard let knob = knobRect else { return }
+        drawMarks(in: context)
         context.setFillColor(AppUIKit.Colors.label.withAlphaComponent(scrollerDrag == nil ? 0.32 : 0.55).cgColor)
         context.addPath(CGPath(roundedRect: knob, cornerWidth: 4, cornerHeight: 4, transform: nil))
         context.fillPath()

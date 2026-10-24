@@ -58,6 +58,29 @@
             return count
         }
 
+        @Test func `marks are drawn along the scroller at the height of their row in the whole file, and many on one line are one`() {
+            let (view, source) = makeView(rows: 1000)
+            defer { withExtendedLifetime(source) {} }
+            // The scroller is drawn in the label color, which is white in the dark appearance and would not show on the white canvas.
+            view.appearance = NSAppearance(named: .aqua)
+            func shade(atRow row: Int) -> Double {
+                guard let image = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return -1 }
+                view.cacheDisplay(in: view.bounds, to: image)
+                let scale = CGFloat(image.pixelsHigh) / view.bounds.height
+                let x = Int((view.bounds.width - 6) * scale)
+                let y = Int((view.markY(ofRow: row) + 0.5) * scale)
+                return Double(image.colorAt(x: x, y: y)?.usingColorSpace(.deviceGray)?.whiteComponent ?? -1)
+            }
+            let clear = shade(atRow: 500)
+            view.marks = [AppUIRowMark(row: 500)]
+            #expect(shade(atRow: 500) != clear, "the mark changes the track at its height")
+            #expect(shade(atRow: 900) == clear, "and nowhere else")
+            #expect(abs(view.markY(ofRow: 500) - 100) < 0.001, "row 500 of 1000 is half way down a view of 200")
+            #expect(view.markY(ofRow: -4) == 0 && view.markY(ofRow: 5000) < 200, "a row outside the file is held to its ends")
+            view.marks = (0 ..< 1000).map { AppUIRowMark(row: $0) }
+            #expect(shade(atRow: 500) != clear)
+        }
+
         @Test func `restyling asks the source for the rows again and keeps the selection and the place`() {
             final class Counting: AppUIRowSource {
                 var rowCount: Int {

@@ -78,6 +78,16 @@ open class AppUIRowView: AppUIInteractiveView {
     var horizontalOffset: CGFloat = 0
     var widestRow: CGFloat = 0
     var scrollerDrag: CGFloat?
+    /// Places along the whole length of the rows to show on the scroller, as a map of where in the file things are (matches, the node chosen), so a person
+    /// sees them without scrolling. Each is a row; the rows of a file of any length are laid along the height of the view.
+    public var marks: [AppUIRowMark] = [] {
+        didSet {
+            if oldValue != marks {
+                redraw()
+            }
+        }
+    }
+
     var pressedWithCommand = false
     var pressMoved = false
     /// How many clicks the press in progress is the latest of: 2 for a double click. An owner sets it to drive a view by hand.
