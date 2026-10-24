@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `appuiConfigureForCode(font:wrapsLines:)` keeps each line whole and scrolls sideways unless asked to wrap, and `appuiSetWrapsLines(_:)` changes it later; a wrapped line of code restarts at the left edge, under none of its indentation.
 - Text view helpers: `appuiString`, `appuiSelectedRange`, `appuiTextStorage`, `appuiScrollToVisible(_:)`, `appuiConfigureForCode(font:)`, `appuiObserveEdits(_:)` and `AppUITextView.appuiMakeScrolling()`, so an editor surface is written once for AppKit and UIKit.
 
 ### Added

@@ -82,4 +82,46 @@ struct AppUITextViewTextTests {
         textView.appuiString = "set by the program"
         #expect(calls == 0)
     }
+
+    @Test func `a view set up for code does not wrap a long line, it keeps it whole to scroll sideways`() throws {
+        let (textView, container) = AppUITextView.appuiMakeScrolling()
+        container.frame = CGRect(x: 0, y: 0, width: 200, height: 100)
+        textView.appuiConfigureForCode(font: AppUIKit.Fonts.monospaced(ofSize: 13))
+        textView.appuiString = "key: " + String(repeating: "word ", count: 80)
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            container.layoutSubtreeIfNeeded()
+            let layout = try #require(textView.layoutManager)
+            let textContainer = try #require(textView.textContainer)
+            layout.ensureLayout(for: textContainer)
+            #expect(!textContainer.widthTracksTextView)
+            #expect(layout.usedRect(for: textContainer).width > 200, "the line is wider than the view, so it was not wrapped")
+            #expect(layout.usedRect(for: textContainer).height < 40, "and it is one line")
+        #elseif canImport(UIKit)
+            container.layoutIfNeeded()
+            textView.layoutManager.ensureLayout(for: textView.textContainer)
+            #expect(!textView.textContainer.widthTracksTextView)
+            let used = textView.layoutManager.usedRect(for: textView.textContainer)
+            #expect(used.width > 200, "the line is wider than the view, so it was not wrapped (used \(used), content \(textView.contentSize))")
+            #expect(used.height < 40, "and it is one line")
+        #endif
+    }
+
+    @Test func `a view set up for code with wrapping asked for wraps at the edge`() throws {
+        let (textView, container) = AppUITextView.appuiMakeScrolling()
+        container.frame = CGRect(x: 0, y: 0, width: 200, height: 100)
+        textView.appuiConfigureForCode(font: AppUIKit.Fonts.monospaced(ofSize: 13), wrapsLines: true)
+        textView.appuiString = "key: " + String(repeating: "word ", count: 80)
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            container.layoutSubtreeIfNeeded()
+            let layout = try #require(textView.layoutManager)
+            let textContainer = try #require(textView.textContainer)
+            layout.ensureLayout(for: textContainer)
+            #expect(textContainer.widthTracksTextView)
+            #expect(layout.usedRect(for: textContainer).width <= 200)
+        #elseif canImport(UIKit)
+            container.layoutIfNeeded()
+            #expect(textView.textContainer.widthTracksTextView)
+            #expect(textView.contentSize.width <= 200)
+        #endif
+    }
 }

@@ -54,8 +54,9 @@ public extension AppUITextView {
 
     /// Sets the view up for editing code and data, where the system's help changes what was typed: no smart quotes or dashes, no autocorrection, spelling or text replacement,
     /// plain text, and undo kept.
-    /// `font` is the font of the text and of what is typed next.
-    func appuiConfigureForCode(font: AppUIFont) {
+    /// `font` is the font of the text and of what is typed next. A line is kept whole and the view scrolls sideways unless `wrapsLines` is true, because a wrapped line of code
+    /// restarts at the left edge, under none of its indentation, and the structure of the text is lost.
+    func appuiConfigureForCode(font: AppUIFont, wrapsLines: Bool = false) {
         #if canImport(AppKit) && !targetEnvironment(macCatalyst)
             isRichText = false
             allowsUndo = true
@@ -73,6 +74,32 @@ public extension AppUITextView {
             spellCheckingType = .no
         #endif
         self.font = font
+        appuiSetWrapsLines(wrapsLines)
+    }
+
+    /// Wraps long lines at the edge of the view, or keeps each whole and lets the view scroll sideways.
+    func appuiSetWrapsLines(_ wraps: Bool) {
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            if wraps {
+                isHorizontallyResizable = false
+                textContainer?.widthTracksTextView = true
+                textContainer?.containerSize = NSSize(width: enclosingScrollView?.contentSize.width ?? frame.width, height: CGFloat.greatestFiniteMagnitude)
+                enclosingScrollView?.hasHorizontalScroller = false
+            } else {
+                isHorizontallyResizable = true
+                maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+                textContainer?.widthTracksTextView = false
+                textContainer?.containerSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+                enclosingScrollView?.hasHorizontalScroller = true
+            }
+        #elseif canImport(UIKit)
+            // Reading the layout manager makes the view use the text system that has one, which builds a new text container; set up the container after it, not before.
+            _ = layoutManager
+            textContainer.widthTracksTextView = wraps
+            textContainer.size = CGSize(width: wraps ? bounds.width : Self.unwrappedWidth, height: CGFloat.greatestFiniteMagnitude)
+            textContainer.lineBreakMode = wraps ? .byWordWrapping : .byClipping
+            alwaysBounceHorizontal = !wraps
+        #endif
     }
 
     /// Calls `handler` each time the person changes the text (typing, pasting, undo), not when the program sets it. Keep the returned token as long as the calls are wanted and
@@ -100,4 +127,11 @@ public extension AppUITextView {
             return (textView, textView)
         #endif
     }
+
+    #if canImport(UIKit) && !canImport(AppKit)
+        /// The width given to the text container of a view that does not wrap: wider than any line of code.
+        private static var unwrappedWidth: CGFloat {
+            100_000
+        }
+    #endif
 }
