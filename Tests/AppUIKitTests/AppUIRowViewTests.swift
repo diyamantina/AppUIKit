@@ -207,6 +207,17 @@
             #expect(view.position == 0)
         }
 
+        @Test func `an owner can select a range and clear it, and the selected text reads back`() {
+            let (view, source) = makeView(rows: 20)
+            defer { withExtendedLifetime(source) {} }
+            var told = 0
+            view.onSelectionChange = { told += 1 }
+            view.select(AppUIRowPosition(row: 1, column: 4) ... AppUIRowPosition(row: 2, column: 3))
+            #expect(view.selectedText() == String(source.text(of: 1).dropFirst(4)) + "\n" + source.text(of: 2).prefix(3))
+            view.select(nil)
+            #expect(view.selectedText() == nil && told == 2)
+        }
+
         @Test func `the view tells assistive technology the text it shows, and a source that grows is taken again`() {
             let (view, source) = makeView(rows: 50)
             defer { withExtendedLifetime(source) {} }

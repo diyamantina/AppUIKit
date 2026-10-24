@@ -15,13 +15,13 @@ import Foundation
     import UIKit
 #endif
 
-extension AppUIRowView {
-    static let scrollerHitWidth: CGFloat = 14
+public extension AppUIRowView {
+    internal static let scrollerHitWidth: CGFloat = 14
 
     // MARK: Places
 
     /// The row and offset in its text at a point of the view; nil when there are no rows.
-    public func rowPosition(at point: CGPoint) -> AppUIRowPosition? {
+    func rowPosition(at point: CGPoint) -> AppUIRowPosition? {
         guard rowCount > 0 else { return nil }
         let row = min(rowCount - 1, max(0, Int((position + Double(point.y)) / Double(rowHeight))))
         prepare(row ..< row + 1)
@@ -32,14 +32,14 @@ extension AppUIRowView {
     }
 
     /// The top of a row in the view's own coordinates (negative above the view).
-    public func top(ofRow row: Int) -> CGFloat {
+    func top(ofRow row: Int) -> CGFloat {
         CGFloat(Double(row) * Double(rowHeight) - position)
     }
 
     // MARK: Scrolling
 
     /// Moves by points as a wheel or a trackpad does, and by points across.
-    public func scroll(byY deltaY: CGFloat, x deltaX: CGFloat = 0) {
+    func scroll(byY deltaY: CGFloat, x deltaX: CGFloat = 0) {
         let before = position
         position += Double(deltaY)
         let room = max(0, widestRow + 16 - (bounds.width - gutterWidth - Self.scrollerHitWidth))
@@ -51,7 +51,7 @@ extension AppUIRowView {
     }
 
     /// Scrolls so that `row` is at the top of the view, or in the middle of it.
-    public func scroll(toRow row: Int, centered: Bool = false) {
+    func scroll(toRow row: Int, centered: Bool = false) {
         let target = Double(min(max(0, row), max(0, rowCount - 1))) * Double(rowHeight)
         position = centered ? target - Double(bounds.height - rowHeight) / 2 : target
         onPositionChange?(position)
@@ -60,7 +60,7 @@ extension AppUIRowView {
     // MARK: The scroller
 
     /// The knob of the scroller, or nil when everything is in view.
-    var knobRect: CGRect? {
+    internal var knobRect: CGRect? {
         let total = Double(rowCount) * Double(rowHeight)
         guard maximumPosition > 0, total > 0 else { return nil }
         let length = min(bounds.height, max(28, CGFloat(Double(bounds.height) / total) * bounds.height))
@@ -68,7 +68,7 @@ extension AppUIRowView {
         return CGRect(x: bounds.width - 10, y: travel * CGFloat(position / maximumPosition), width: 8, height: length)
     }
 
-    func drawScroller(in context: CGContext) {
+    internal func drawScroller(in context: CGContext) {
         guard let knob = knobRect else { return }
         context.setFillColor(AppUIKit.Colors.label.withAlphaComponent(scrollerDrag == nil ? 0.32 : 0.55).cgColor)
         context.addPath(CGPath(roundedRect: knob, cornerWidth: 4, cornerHeight: 4, transform: nil))
@@ -85,7 +85,7 @@ extension AppUIRowView {
 
     // MARK: Pressing
 
-    func handlePressBegan(at point: CGPoint) {
+    internal func handlePressBegan(at point: CGPoint) {
         pressMoved = false
         if point.x >= bounds.width - Self.scrollerHitWidth, let knob = knobRect {
             if knob.contains(CGPoint(x: knob.midX, y: point.y)) {
@@ -108,7 +108,7 @@ extension AppUIRowView {
         }
     }
 
-    func handlePressMoved(at point: CGPoint) {
+    internal func handlePressMoved(at point: CGPoint) {
         if scrollerDrag != nil {
             dragScroller(to: point.y)
             return
@@ -126,7 +126,7 @@ extension AppUIRowView {
         onSelectionChange?()
     }
 
-    func handlePressEnded(at point: CGPoint) {
+    internal func handlePressEnded(at point: CGPoint) {
         defer {
             scrollerDrag = nil
             redraw()
@@ -135,7 +135,7 @@ extension AppUIRowView {
         onActivate?(place, pressedWithCommand)
     }
 
-    func select(word place: AppUIRowPosition) {
+    internal func select(word place: AppUIRowPosition) {
         guard let cached = cache[place.row] else { return }
         let text = cached.row.text as NSString
         func isWord(_ index: Int) -> Bool {
@@ -157,7 +157,7 @@ extension AppUIRowView {
         onSelectionChange?()
     }
 
-    func select(rowAt row: Int) {
+    internal func select(rowAt row: Int) {
         guard let cached = cache[row] else { return }
         selectionAnchor = AppUIRowPosition(row: row, column: 0)
         selection = AppUIRowPosition(row: row, column: 0) ... AppUIRowPosition(row: row, column: (cached.row.text as NSString).length)
@@ -168,7 +168,7 @@ extension AppUIRowView {
     // MARK: Selected text
 
     /// The text of the selection, or nil when nothing is selected or it holds more than `limit` characters.
-    public func selectedText(limit: Int = 50_000_000) -> String? {
+    func selectedText(limit: Int = 50_000_000) -> String? {
         guard let selection, let source else { return nil }
         var output = ""
         var row = selection.lowerBound.row
@@ -194,8 +194,16 @@ extension AppUIRowView {
         return output
     }
 
+    /// Selects a range of the text, or nothing, as an owner does when it has chosen what the person should see selected.
+    func select(_ range: ClosedRange<AppUIRowPosition>?) {
+        selection = range
+        selectionAnchor = range?.lowerBound
+        redraw()
+        onSelectionChange?()
+    }
+
     /// Selects everything.
-    public func selectEverything() {
+    func selectEverything() {
         guard rowCount > 0, let last = source?.rows(in: rowCount - 1 ..< rowCount).first else { return }
         let first = AppUIRowPosition(row: 0, column: 0)
         selectionAnchor = first
@@ -204,14 +212,14 @@ extension AppUIRowView {
         onSelectionChange?()
     }
 
-    public func copySelection() {
+    func copySelection() {
         if let text = selectedText() {
             AppUIKit.Pasteboard.copy(text)
         }
     }
 
     /// The text of the rows in view, which is what assistive technology and tests read.
-    public var visibleText: String {
+    var visibleText: String {
         let visible = visibleRows
         prepare(visible)
         return visible.compactMap { cache[$0]?.row.text }.joined(separator: "\n")

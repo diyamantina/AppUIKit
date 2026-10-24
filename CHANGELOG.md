@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `AppUIRowView.select(_:)`: an owner chooses the range of text that is selected (or none), as when a node of an outline is chosen and its whole text should show selected.
 - `AppUIRowView`, with `AppUIRowSource`, `AppUIRow`, `AppUIRowRun` and `AppUIRowPosition`: a view that shows the rows of a source of any size by drawing only the rows in view with Core Text, on AppKit and UIKit. It is as tall as its window; the place it is scrolled to is a `Double` of points, so thirty-seven million rows are placed to the row. It scrolls by wheel, trackpad, keys and a scroller of its own, selects (drag, double click for a word, triple click for a row) and copies, shows a gutter, tells its owner of a click or a tap and shows the pointing hand over a link while Command is held (AppKit). Measured in a window on a Mac: 0.9 ms to redraw 60 rows and 1.6 ms for 200, against 3 to 10 ms for a pool of row layers.
 - `AppUIKit.Colors.dynamic(light:dark:)`: a color made from two `0xRRGGBB` numbers that is the first in the light appearance and the second in the dark one, on AppKit and UIKit.
 - `appuiObserveCommandClick`: tells the UTF-16 index of the character under the pointer when a text view is Command-clicked (AppKit) or tapped (UIKit), through a gesture recognizer that lets the click through, so the caret and selection still work.
