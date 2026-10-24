@@ -64,7 +64,8 @@ open class AppUITreeView: AppUIInteractiveView {
 
     var cache: [Int: AppUITreeRow] = [:]
     var scrollerDrag: CGFloat?
-    var pressCount = 1
+    /// How many clicks the press in progress is the latest of: 2 for a double click. An owner sets it to drive a view by hand.
+    public var pressCount = 1
     static let scrollerHitWidth: CGFloat = 14
 
     public var position: Double = 0 {

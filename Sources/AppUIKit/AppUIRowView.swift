@@ -80,7 +80,8 @@ open class AppUIRowView: AppUIInteractiveView {
     var scrollerDrag: CGFloat?
     var pressedWithCommand = false
     var pressMoved = false
-    var pressCount = 1
+    /// How many clicks the press in progress is the latest of: 2 for a double click. An owner sets it to drive a view by hand.
+    public var pressCount = 1
     var showsLinkCursor = false
     #if canImport(AppKit) && !targetEnvironment(macCatalyst)
         var monitor: AppUIEventMonitor?
