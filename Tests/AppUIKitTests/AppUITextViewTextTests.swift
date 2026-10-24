@@ -291,4 +291,15 @@ extension AppUITextViewTextTests {
         #expect(abs(index - target.location) <= 1, "the click was on the first character of line 7: \(index) against \(target.location)")
         _ = container
     }
+
+    @Test func `the pointer is a hand only with Command held over a link`() {
+        let (textView, _, text) = tallAndWide()
+        let link = (text as NSString).range(of: "line 7")
+        let observer = textView.appuiObserveCommandClick(isLink: { link.contains($0) }, { _ in })
+        let on = textView.appuiRect(of: AppUIRange(location: link.location + 1, length: 1))
+        let off = textView.appuiRect(of: (text as NSString).range(of: "line 20"))
+        #expect(observer.wantsPointer(at: CGPoint(x: on.midX, y: on.midY), command: true))
+        #expect(!observer.wantsPointer(at: CGPoint(x: on.midX, y: on.midY), command: false))
+        #expect(!observer.wantsPointer(at: CGPoint(x: off.minX + 2, y: off.midY), command: true))
+    }
 }
