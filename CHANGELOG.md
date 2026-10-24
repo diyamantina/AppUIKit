@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `appuiConfigureForCode` keeps the text 12 points from the edge of the view and turns the system's writing tools off, which put an Apple Intelligence popup over selected code.
 - `appuiScrollToVisible(_:centered:)` lays the text out as far as the range before scrolling, scrolls up, down and sideways (AppKit; UIKit only to the row), and can put the range in the middle of the view. `appuiRect(of:)` and `appuiVisibleRect` say where a range is and what can be seen.
 - `appuiObserveSelection(_:)` and `AppUITextViewSelectionObserver`: a closure told each time the selection or the caret of a text view moves, on AppKit and UIKit.
 - `appuiConfigureForCode(font:wrapsLines:)` keeps each line whole and scrolls sideways unless asked to wrap, and `appuiSetWrapsLines(_:)` changes it later; a wrapped line of code restarts at the left edge, under none of its indentation.

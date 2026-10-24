@@ -49,7 +49,8 @@ public extension AppUITextView {
 
     /// Scrolls the view, up or down and sideways, so that the start of `range` is on screen, and the whole of it when it fits. The text is laid out as far as
     /// `range` first, because a text view lays out lazily and a request to scroll to text that is not laid out yet lands in the wrong place. With `centered` the
-    /// range is put in the middle of the view, rows above and below it, which is where a person looking for it wants it. On UIKit the text view keeps its
+    /// range is put in the middle of the view, rows above and below it, which is where a person looking for it wants it; a range taller than the view
+    /// starts at the top of it. On UIKit the text view keeps its
     /// content as wide as itself, so only the row can be scrolled to, not a column beyond the edge.
     func appuiScrollToVisible(_ range: AppUIRange, centered: Bool = false) {
         let rect = appuiRect(of: range)
@@ -58,36 +59,35 @@ public extension AppUITextView {
                 scrollToVisible(rect)
                 return
             }
-            let visible = scroll.documentVisibleRect
-            var origin = visible.origin
-            if centered {
-                origin.y = rect.midY - visible.height / 2
-            } else if rect.minY < visible.minY {
-                origin.y = rect.minY
-            } else if rect.maxY > visible.maxY {
-                origin.y = rect.maxY - visible.height
-            }
-            if rect.minX < visible.minX || rect.minX > visible.maxX - 24 {
-                origin.x = max(0, rect.minX - 24)
-            }
-            origin.y = max(0, min(origin.y, max(0, frame.height - visible.height)))
+            let origin = Self.scrolledOrigin(
+                to: rect, visible: scroll.documentVisibleRect, contentHeight: frame.height, centered: centered
+            )
             scroll.contentView.scroll(to: origin)
             scroll.reflectScrolledClipView(scroll.contentView)
         #elseif canImport(UIKit)
-            var offset = contentOffset
-            if centered {
-                offset.y = rect.midY - bounds.height / 2
-            } else if rect.minY < offset.y {
-                offset.y = rect.minY
-            } else if rect.maxY > offset.y + bounds.height {
-                offset.y = rect.maxY - bounds.height
-            }
-            if rect.minX < offset.x || rect.minX > offset.x + bounds.width - 24 {
-                offset.x = max(0, rect.minX - 24)
-            }
-            offset.y = max(0, min(offset.y, max(0, contentSize.height - bounds.height)))
-            setContentOffset(offset, animated: false)
+            let visible = CGRect(origin: contentOffset, size: bounds.size)
+            setContentOffset(Self.scrolledOrigin(to: rect, visible: visible, contentHeight: contentSize.height, centered: centered), animated: false)
         #endif
+    }
+
+    /// Where the visible part's origin has to move for `rect` to be seen: the rectangle's first line at the top when it is taller than the view, its middle in the
+    /// middle of the view when `centered`, the least movement otherwise; sideways only when its start is out of view. Never past either end of the content.
+    private static func scrolledOrigin(to rect: CGRect, visible: CGRect, contentHeight: CGFloat, centered: Bool) -> CGPoint {
+        var origin = visible.origin
+        if rect.height > visible.height {
+            origin.y = rect.minY - 8
+        } else if centered {
+            origin.y = rect.midY - visible.height / 2
+        } else if rect.minY < visible.minY {
+            origin.y = rect.minY
+        } else if rect.maxY > visible.maxY {
+            origin.y = rect.maxY - visible.height
+        }
+        if rect.minX < visible.minX || rect.minX > visible.maxX - 24 {
+            origin.x = max(0, rect.minX - 24)
+        }
+        origin.y = max(0, min(origin.y, max(0, contentHeight - visible.height)))
+        return origin
     }
 
     /// The part of the text, in the text view's own coordinates, that can be seen now: the visible part of the scroll view that holds it on AppKit, the part of the
@@ -118,6 +118,11 @@ public extension AppUITextView {
         #endif
     }
 
+    /// The space between the edge of the view and the text, so that code does not touch the edge.
+    private static var codeInset: CGFloat {
+        12
+    }
+
     /// Sets the view up for editing code and data, where the system's help changes what was typed: no smart quotes or dashes, no autocorrection, spelling or text replacement,
     /// plain text, and undo kept.
     /// `font` is the font of the text and of what is typed next. A line is kept whole and the view scrolls sideways unless `wrapsLines` is true, because a wrapped line of code
@@ -131,6 +136,10 @@ public extension AppUITextView {
             isAutomaticSpellingCorrectionEnabled = false
             isAutomaticTextReplacementEnabled = false
             isAutomaticTextCompletionEnabled = false
+            if #available(macOS 15, *) {
+                writingToolsBehavior = .none
+            }
+            textContainerInset = NSSize(width: Self.codeInset, height: 8)
         #elseif canImport(UIKit)
             autocorrectionType = .no
             autocapitalizationType = .none
@@ -138,6 +147,10 @@ public extension AppUITextView {
             smartDashesType = .no
             smartInsertDeleteType = .no
             spellCheckingType = .no
+            if #available(iOS 18, *) {
+                writingToolsBehavior = .none
+            }
+            textContainerInset = UIEdgeInsets(top: 8, left: Self.codeInset, bottom: 8, right: Self.codeInset)
         #endif
         self.font = font
         appuiSetWrapsLines(wrapsLines)

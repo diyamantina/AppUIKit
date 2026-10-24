@@ -185,4 +185,17 @@ struct AppUITextViewTextTests {
         let place = place(of: target, in: textView)
         #expect(abs(place.range.midY - place.visible.midY) < place.visible.height / 4, "centered: \(place.range) in \(place.visible)")
     }
+
+    @Test func `code keeps off the edge of the view and is not offered the system's writing tools`() {
+        let (textView, _) = AppUITextView.appuiMakeScrolling()
+        textView.appuiConfigureForCode(font: AppUIKit.Fonts.monospaced(ofSize: 13))
+        textView.appuiString = "a: 1"
+        let rect = textView.appuiRect(of: AppUIRange(location: 0, length: 1))
+        #expect(rect.minX >= 12, "the first column starts \(rect.minX) from the edge")
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            if #available(macOS 15, *) {
+                #expect(textView.writingToolsBehavior == .none)
+            }
+        #endif
+    }
 }
