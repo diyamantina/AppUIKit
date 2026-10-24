@@ -108,9 +108,9 @@ public extension AppUIRowView {
 
     // MARK: Pressing
 
-    internal func handlePressBegan(at point: CGPoint) {
+    internal func handlePressBegan(at point: CGPoint, scrollerWidth: CGFloat = AppUIRowView.scrollerHitWidth) {
         pressMoved = false
-        if point.x >= bounds.width - Self.scrollerHitWidth, let knob = knobRect {
+        if point.x >= bounds.width - scrollerWidth, let knob = knobRect {
             if knob.contains(CGPoint(x: knob.midX, y: point.y)) {
                 scrollerDrag = point.y - knob.minY
             } else {

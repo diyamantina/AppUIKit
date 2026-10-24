@@ -78,6 +78,10 @@ open class AppUIRowView: AppUIInteractiveView {
     var horizontalOffset: CGFloat = 0
     var widestRow: CGFloat = 0
     var scrollerDrag: CGFloat?
+    /// What a touch is doing: a flick still moving the rows, the display link that moves it, and whether the finger went down on the scroller.
+    var momentum: AppUIRowMomentum?
+    var momentumLink: AnyObject?
+    var touchOnScroller = false
     /// Places along the whole length of the rows to show on the scroller, as a map of where in the file things are (matches, the node chosen), so a person
     /// sees them without scrolling. Each is a row; the rows of a file of any length are laid along the height of the view.
     public var marks: [AppUIRowMark] = [] {
@@ -416,21 +420,143 @@ open class AppUIRowView: AppUIInteractiveView {
         }
     #elseif canImport(UIKit)
         private func installGestures() {
-            addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(panned(_:))))
+            let pan = UIPanGestureRecognizer(target: self, action: #selector(panned(_:)))
+            pan.maximumNumberOfTouches = 1
+            addGestureRecognizer(pan)
+            let press = UILongPressGestureRecognizer(target: self, action: #selector(longPressed(_:)))
+            press.minimumPressDuration = 0.35
+            addGestureRecognizer(press)
             addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapped(_:))))
+            addInteraction(UIEditMenuInteraction(delegate: self))
         }
 
+        /// A finger is wider than a pointer: it takes hold of the scroller from this far in.
+        static let touchScrollerWidth: CGFloat = 32
+
         @objc private func panned(_ recognizer: UIPanGestureRecognizer) {
-            let translation = recognizer.translation(in: self)
-            recognizer.setTranslation(.zero, in: self)
-            scroll(byY: -translation.y, x: -translation.x)
+            let point = recognizer.location(in: self)
+            switch recognizer.state {
+            case .began:
+                // The recognizer begins after the finger has moved a little; the place it went down is that far back.
+                let moved = recognizer.translation(in: self)
+                touchPanBegan(at: CGPoint(x: point.x - moved.x, y: point.y - moved.y))
+                touchPanChanged(by: moved, at: point)
+            case .changed:
+                touchPanChanged(by: recognizer.translation(in: self), at: point)
+            case .ended:
+                touchPanEnded(velocity: recognizer.velocity(in: self), at: point)
+            default:
+                touchPanEnded(velocity: .zero, at: point)
+            }
+            if recognizer.state == .began || recognizer.state == .changed {
+                recognizer.setTranslation(.zero, in: self)
+            }
+        }
+
+        // MARK: What a touch does
+
+        /// A finger went down: a flick still moving the rows stops, and a finger on the scroller takes hold of it.
+        func touchPanBegan(at point: CGPoint) {
+            stopMomentum()
+            touchOnScroller = knobRect != nil && point.x >= bounds.width - Self.touchScrollerWidth
+            if touchOnScroller {
+                handlePressBegan(at: point, scrollerWidth: Self.touchScrollerWidth)
+            }
+        }
+
+        /// The finger moved by `delta` since it last did, and is now at `point`.
+        func touchPanChanged(by delta: CGPoint, at point: CGPoint) {
+            if touchOnScroller {
+                handlePressMoved(at: point)
+            } else {
+                scroll(byY: -delta.y, x: -delta.x)
+            }
+        }
+
+        /// The finger lifted at a speed: the rows go on moving and slow down, as a system scroll view's do.
+        func touchPanEnded(velocity: CGPoint, at point: CGPoint) {
+            if touchOnScroller {
+                handlePressEnded(at: point)
+                touchOnScroller = false
+                return
+            }
+            startMomentum(velocity: -Double(velocity.y))
+        }
+
+        func startMomentum(velocity: Double) {
+            stopMomentum()
+            let flick = AppUIRowMomentum(velocity: velocity)
+            guard flick.isMoving else { return }
+            momentum = flick
+            let link = CADisplayLink(target: self, selector: #selector(momentumFrame(_:)))
+            link.add(to: .main, forMode: .common)
+            momentumLink = link
+        }
+
+        func stopMomentum() {
+            (momentumLink as? CADisplayLink)?.invalidate()
+            momentumLink = nil
+            momentum = nil
+        }
+
+        @objc private func momentumFrame(_ link: CADisplayLink) {
+            advanceMomentum(by: link.targetTimestamp - link.timestamp)
+        }
+
+        /// Moves the rows as far as the flick goes in `seconds` more, and ends it when it has slowed to a stop or reached an end of the rows.
+        func advanceMomentum(by seconds: Double) {
+            guard var flick = momentum else { return }
+            let before = position
+            scroll(byY: CGFloat(flick.advance(by: seconds)))
+            momentum = flick
+            if !flick.isMoving || position == before {
+                stopMomentum()
+            }
+        }
+
+        /// A finger held down: the word under it is selected, and moving the finger takes the selection with it. Lifting leaves a menu to copy it.
+        func touchLongPress(_ state: UIGestureRecognizer.State, at point: CGPoint) {
+            switch state {
+            case .began:
+                stopMomentum()
+                pressCount = 2
+                handlePressBegan(at: point)
+            case .changed:
+                handlePressMoved(at: point)
+            case .ended, .cancelled, .failed:
+                handlePressEnded(at: point)
+                pressCount = 1
+                if state == .ended, selection != nil {
+                    let configuration = UIEditMenuConfiguration(identifier: nil, sourcePoint: point)
+                    (interactions.compactMap { $0 as? UIEditMenuInteraction }).first?.presentEditMenu(with: configuration)
+                }
+            default:
+                break
+            }
+        }
+
+        @objc private func longPressed(_ recognizer: UILongPressGestureRecognizer) {
+            touchLongPress(recognizer.state, at: recognizer.location(in: self))
         }
 
         @objc private func tapped(_ recognizer: UITapGestureRecognizer) {
+            stopMomentum()
             let point = recognizer.location(in: self)
             if let place = rowPosition(at: point) {
                 onActivate?(place, false)
             }
+        }
+
+        override open var canBecomeFirstResponder: Bool {
+            true
+        }
+
+        override open func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+            action == #selector(copy(_:)) ? selection != nil : super.canPerformAction(action, withSender: sender)
+        }
+
+        override open func copy(_: Any?) {
+            copySelection()
         }
 
         override open var accessibilityValue: String? {
@@ -439,3 +565,11 @@ open class AppUIRowView: AppUIInteractiveView {
         }
     #endif
 }
+
+#if !(canImport(AppKit) && !targetEnvironment(macCatalyst)) && canImport(UIKit)
+    extension AppUIRowView: @MainActor UIEditMenuInteractionDelegate {
+        public func editMenuInteraction(_: UIEditMenuInteraction, menuFor _: UIEditMenuConfiguration, suggestedActions _: [UIMenuElement]) -> UIMenu? {
+            UIMenu(children: [UIAction(title: "Copy", image: UIImage(systemName: "doc.on.doc")) { [weak self] _ in self?.copySelection() }])
+        }
+    }
+#endif
