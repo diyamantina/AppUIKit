@@ -15,6 +15,23 @@ public extension AppUIKit {
     /// Use these when you need the actual NSColor/UIColor rather than SwiftUI Color.
     /// Access via `AppUIKit.Colors.label`, `AppUIKit.Colors.background`, etc.
     enum Colors {
+        // MARK: - Made colors
+
+        /// A color that is `light` in the light appearance and `dark` in the dark one, each as `0xRRGGBB` in sRGB, and follows the appearance as it changes. Make
+        /// it once and keep it: two made colors are two colors, though they look the same.
+        public static func dynamic(light: UInt32, dark: UInt32) -> AppUIColor {
+            func make(_ rgb: UInt32) -> AppUIColor {
+                AppUIColor(srgbRed: Double((rgb >> 16) & 0xFF) / 255, green: Double((rgb >> 8) & 0xFF) / 255, blue: Double(rgb & 0xFF) / 255, alpha: 1)
+            }
+            #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+                return AppUIColor(name: nil) { appearance in
+                    appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? make(dark) : make(light)
+                }
+            #elseif canImport(UIKit)
+                return AppUIColor { traits in traits.userInterfaceStyle == .dark ? make(dark) : make(light) }
+            #endif
+        }
+
         // MARK: - Backgrounds
 
         /// Background color for control elements.

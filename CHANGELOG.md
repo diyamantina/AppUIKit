@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `AppUIKit.Colors.dynamic(light:dark:)`: a color made from two `0xRRGGBB` numbers that is the first in the light appearance and the second in the dark one, on AppKit and UIKit.
 - `appuiObserveCommandClick`: tells the UTF-16 index of the character under the pointer when a text view is Command-clicked (AppKit) or tapped (UIKit), through a gesture recognizer that lets the click through, so the caret and selection still work.
 - `appuiShowsLineNumbers`: a column of line numbers beside a text view, the scroll view's ruler on AppKit and a view over the left edge on UIKit, drawn for the lines in view only. `AppUILineNumbers` finds the line of an offset by search; `appuiUpdateLineNumbers()` refits the column after the font changes.
 - `appuiConfigureForCode` keeps the text 12 points from the edge of the view and turns the system's writing tools off, which put an Apple Intelligence popup over selected code.
