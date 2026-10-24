@@ -49,7 +49,8 @@ open class AppUIRowView: AppUIInteractiveView {
         didSet { redraw() }
     }
 
-    public var selectionColor: AppUIColor = AppUIKit.Colors.fill {
+    /// The color behind selected text: a blue that reads on both appearances.
+    public var selectionColor: AppUIColor = AppUIKit.Colors.dynamic(light: 0xB3D7FF, dark: 0x264F78) {
         didSet { redraw() }
     }
 
@@ -146,7 +147,8 @@ open class AppUIRowView: AppUIInteractiveView {
     }
 
     func fontChanged() {
-        let measured = CTFontCreateWithName(font.fontName as CFString, font.pointSize, nil)
+        // The font is a Core Text font already; making one again from its name would not find a system font, whose name is private.
+        let measured: CTFont = font
         ascent = ceil(CTFontGetAscent(measured))
         rowHeight = ceil(CTFontGetAscent(measured) + CTFontGetDescent(measured) + CTFontGetLeading(measured)) + 2
         var glyph = CTFontGetGlyphWithName(measured, "zero" as CFString)
