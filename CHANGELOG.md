@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A text view of a very large file stalled for seconds: it laid out every line before showing or scrolling to one (4.6 s to open and 4.7 s to jump to the end of a 13 MB description of 357,000 lines). `appuiConfigureForCode` now allows non-contiguous layout, and `appuiScrollToVisible` scrolls to where the range is estimated to be, lays out the lines then in view and measures again until the range stops moving (0.7 s to open, 11 ms to jump to the end; jumps checked at 50%, 90% and 100% of the file).
 - On AppKit a Command-click on a link did nothing: a text view runs its own loop from the mouse-down to the mouse-up, in which a gesture recognizer sees nothing. It is now taken at the mouse-down by a monitor of the window's events, and only when the character is a link, so any other click reaches the text view. Found by sending real mouse events to the real view in a window.
 
 ### Added

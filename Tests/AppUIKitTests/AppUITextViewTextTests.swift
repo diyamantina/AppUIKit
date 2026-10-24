@@ -281,8 +281,23 @@ extension AppUITextViewTextTests {
         var told: [Int] = []
         let observer = textView.appuiObserveCommandClick { told.append($0) }
         let target = (text as NSString).range(of: "line 7")
+        // A person clicks on text that is in view, which is laid out; the layout is lazy, so the text is brought into view first.
+        textView.appuiScrollToVisible(target)
         let rect = textView.appuiRect(of: target)
         let point = CGPoint(x: rect.minX + 2, y: rect.midY)
+        print(
+            rect,
+            "visible",
+            textView.appuiVisibleRect,
+            "frame",
+            textView.frame,
+            "target",
+            target,
+            "idx",
+            textView.characterIndexForInsertion(at: point),
+            "idx of line top",
+            textView.characterIndexForInsertion(at: CGPoint(x: 20, y: 8))
+        )
         observer.click(at: point, command: false)
         #expect(told.isEmpty)
         observer.click(at: point, command: true)
@@ -296,6 +311,7 @@ extension AppUITextViewTextTests {
         let (textView, _, text) = tallAndWide()
         let link = (text as NSString).range(of: "line 7")
         let observer = textView.appuiObserveCommandClick(isLink: { link.contains($0) }, { _ in })
+        textView.appuiScrollToVisible(link)
         let on = textView.appuiRect(of: AppUIRange(location: link.location + 1, length: 1))
         let off = textView.appuiRect(of: (text as NSString).range(of: "line 20"))
         #expect(observer.wantsPointer(at: CGPoint(x: on.midX, y: on.midY), command: true))

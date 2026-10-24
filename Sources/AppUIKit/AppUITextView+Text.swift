@@ -53,20 +53,44 @@ public extension AppUITextView {
     /// starts at the top of it. On UIKit the text view keeps its
     /// content as wide as itself, so only the row can be scrolled to, not a column beyond the edge.
     func appuiScrollToVisible(_ range: AppUIRange, centered: Bool = false) {
-        let rect = appuiRect(of: range)
+        // The layout is lazy and does not lay out the lines before the range, so where the range is, before the view around it is laid out, is an estimate. The
+        // view is scrolled to the estimate, the lines now in view are laid out, and where the range is is measured again, until it stops moving.
+        var previous: CGFloat?
+        for _ in 0 ..< 8 {
+            let rect = appuiRect(of: range)
+            appuiScroll(toRect: rect, centered: centered)
+            appuiLayOutVisibleLines()
+            let settled = abs(appuiRect(of: range).minY - rect.minY) < 1
+            if settled || previous == rect.minY {
+                return
+            }
+            previous = rect.minY
+        }
+    }
+
+    /// Scrolls to `rect` once, as `appuiScrollToVisible` does.
+    private func appuiScroll(toRect rect: CGRect, centered: Bool) {
         #if canImport(AppKit) && !targetEnvironment(macCatalyst)
             guard let scroll = enclosingScrollView else {
                 scrollToVisible(rect)
                 return
             }
-            let origin = Self.scrolledOrigin(
-                to: rect, visible: scroll.documentVisibleRect, contentHeight: frame.height, centered: centered
-            )
+            let origin = Self.scrolledOrigin(to: rect, visible: scroll.documentVisibleRect, contentHeight: frame.height, centered: centered)
             scroll.contentView.scroll(to: origin)
             scroll.reflectScrolledClipView(scroll.contentView)
         #elseif canImport(UIKit)
             let visible = CGRect(origin: contentOffset, size: bounds.size)
             setContentOffset(Self.scrolledOrigin(to: rect, visible: visible, contentHeight: contentSize.height, centered: centered), animated: false)
+        #endif
+    }
+
+    /// Lays out the lines that are in view now, so that where text is, near them, is no longer an estimate.
+    func appuiLayOutVisibleLines() {
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            guard let layout = layoutManager, let container = textContainer else { return }
+            layout.ensureLayout(forBoundingRect: appuiVisibleRect.offsetBy(dx: -textContainerOrigin.x, dy: -textContainerOrigin.y), in: container)
+        #elseif canImport(UIKit)
+            layoutManager.ensureLayout(forBoundingRect: appuiVisibleRect.offsetBy(dx: -textContainerInset.left, dy: -textContainerInset.top), in: textContainer)
         #endif
     }
 
@@ -104,13 +128,13 @@ public extension AppUITextView {
     func appuiRect(of range: AppUIRange) -> CGRect {
         #if canImport(AppKit) && !targetEnvironment(macCatalyst)
             guard let layout = layoutManager, let container = textContainer else { return .zero }
-            layout.ensureLayout(forCharacterRange: NSRange(location: 0, length: min(NSMaxRange(range), (string as NSString).length)))
+            layout.ensureLayout(forCharacterRange: NSIntersectionRange(range, NSRange(location: 0, length: (string as NSString).length)))
             var rect = layout.boundingRect(forGlyphRange: layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil), in: container)
             rect.origin.x += textContainerOrigin.x
             rect.origin.y += textContainerOrigin.y
             return rect
         #elseif canImport(UIKit)
-            layoutManager.ensureLayout(forCharacterRange: NSRange(location: 0, length: min(NSMaxRange(range), (text ?? "").utf16.count)))
+            layoutManager.ensureLayout(forCharacterRange: NSIntersectionRange(range, NSRange(location: 0, length: (text ?? "").utf16.count)))
             var rect = layoutManager.boundingRect(forGlyphRange: layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil), in: textContainer)
             rect.origin.x += textContainerInset.left
             rect.origin.y += textContainerInset.top
@@ -139,6 +163,8 @@ public extension AppUITextView {
             if #available(macOS 15, *) {
                 writingToolsBehavior = .none
             }
+            // Lay out what is seen and the little around it, not every line before it: a file of hundreds of thousands of lines takes seconds to lay out whole.
+            layoutManager?.allowsNonContiguousLayout = true
             textContainerInset = NSSize(width: Self.codeInset, height: 8)
         #elseif canImport(UIKit)
             autocorrectionType = .no
@@ -150,6 +176,7 @@ public extension AppUITextView {
             if #available(iOS 18, *) {
                 writingToolsBehavior = .none
             }
+            layoutManager.allowsNonContiguousLayout = true
             textContainerInset = UIEdgeInsets(top: 8, left: Self.codeInset, bottom: 8, right: Self.codeInset)
         #endif
         self.font = font
