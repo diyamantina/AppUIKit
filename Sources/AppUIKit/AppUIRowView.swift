@@ -408,7 +408,7 @@ open class AppUIRowView: AppUIInteractiveView {
 
         /// What a key does to a view that can be edited: moves the caret, or is given to the owner as what was typed. True when it was one of those.
         private func typed(_ event: NSEvent) -> Bool {
-            if moved(by: event.specialKey) {
+            if moved(by: event.specialKey, extending: event.modifierFlags.contains(.shift)) {
                 return true
             }
             switch event.specialKey {
@@ -424,18 +424,39 @@ open class AppUIRowView: AppUIInteractiveView {
             return true
         }
 
-        /// The keys that move the caret; true when `key` was one.
-        private func moved(by key: NSEvent.SpecialKey?) -> Bool {
+        /// The keys that move the caret, or with Shift extend the selection; true when `key` was one.
+        private func moved(by key: NSEvent.SpecialKey?, extending: Bool) -> Bool {
             switch key {
-            case .leftArrow: moveCaret(by: -1)
-            case .rightArrow: moveCaret(by: 1)
-            case .upArrow: moveCaret(rows: -1)
-            case .downArrow: moveCaret(rows: 1)
-            case .home: moveCaretToRowEdge(end: false)
-            case .end: moveCaretToRowEdge(end: true)
+            case .leftArrow: go(columns: -1, extending: extending)
+            case .rightArrow: go(columns: 1, extending: extending)
+            case .upArrow: go(rows: -1, extending: extending)
+            case .downArrow: go(rows: 1, extending: extending)
+            case .home: go(toEnd: false, extending: extending)
+            case .end: go(toEnd: true, extending: extending)
             default: return false
             }
             return true
+        }
+
+        /// Moves the caret, or extends the selection, by characters, by rows, or to an edge of the row.
+        private func go(columns: Int = 0, rows: Int = 0, toEnd: Bool? = nil, extending: Bool) {
+            if let toEnd {
+                if extending {
+                    extendSelectionToRowEdge(end: toEnd)
+                } else {
+                    moveCaretToRowEdge(end: toEnd)
+                }
+            } else if rows != 0 {
+                if extending {
+                    extendSelection(rows: rows)
+                } else {
+                    moveCaret(rows: rows)
+                }
+            } else if extending {
+                extendSelection(by: columns)
+            } else {
+                moveCaret(by: columns)
+            }
         }
 
         @objc open func copy(_: Any?) {

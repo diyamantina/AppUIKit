@@ -31,10 +31,11 @@
             return (view, source)
         }
 
-        private func key(_ characters: String, special: NSEvent.SpecialKey? = nil, in view: AppUIRowView) {
+        private func key(_ characters: String, special: NSEvent.SpecialKey? = nil, shift: Bool = false, in view: AppUIRowView) {
             let text = special.flatMap { UnicodeScalar(UInt32($0.rawValue)).map { String(Character($0)) } } ?? characters
             if let event = NSEvent.keyEvent(
-                with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, characters: text, charactersIgnoringModifiers: text,
+                with: .keyDown, location: .zero, modifierFlags: shift ? [.shift] : [], timestamp: 0, windowNumber: 0, context: nil, characters: text,
+                charactersIgnoringModifiers: text,
                 isARepeat: false, keyCode: 0
             ) {
                 view.keyDown(with: event)
@@ -129,6 +130,38 @@
                 return dark
             }
             #expect(ink(withCaret: true) > ink(withCaret: false), "a line is drawn at the caret")
+        }
+
+        @Test func `holding shift with an arrow selects, and turning back unselects`() {
+            let (view, source) = makeView(["abcdef", "ghi", "jkl"])
+            defer { withExtendedLifetime(source) {} }
+            var got: [AppUIRowEdit] = []
+            view.onEdit = { got.append($0) }
+            view.setCaret(AppUIRowPosition(row: 0, column: 2))
+            for _ in 0 ..< 3 {
+                key("", special: .rightArrow, shift: true, in: view)
+            }
+            #expect(view.selection == AppUIRowPosition(row: 0, column: 2) ... AppUIRowPosition(row: 0, column: 5))
+            #expect(view.selectedText() == "cde")
+            key("", special: .leftArrow, shift: true, in: view)
+            #expect(view.selectedText() == "cd", "turned back, it shrinks")
+            for _ in 0 ..< 4 {
+                key("", special: .leftArrow, shift: true, in: view)
+            }
+            #expect(view.selection == AppUIRowPosition(row: 0, column: 0) ... AppUIRowPosition(row: 0, column: 2), "past the anchor it runs the other way")
+            view.setCaret(AppUIRowPosition(row: 0, column: 4))
+            key("", special: .end, shift: true, in: view)
+            #expect(view.selectedText() == "ef")
+            key("", special: .downArrow, shift: true, in: view)
+            #expect(view.selectedText() == "ef\nghi", "down keeps the column as far as the row goes, over the line break")
+            key("x", in: view)
+            #expect(got == [.insert("x")], "what is typed goes to the owner to replace the selection")
+            // Without Shift an arrow ends the selection at the end it points to.
+            key("", special: .leftArrow, in: view)
+            #expect(view.selection == nil && view.caret == AppUIRowPosition(row: 0, column: 4))
+            view.setCaret(AppUIRowPosition(row: 2, column: 1))
+            key("", special: .home, shift: true, in: view)
+            #expect(view.selectedText() == "j")
         }
     }
 #endif
