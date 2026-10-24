@@ -6,8 +6,10 @@ import Foundation
     import UIKit
 #endif
 
-/// Tells a closure the character under the pointer when a text view is Command-clicked (AppKit) or tapped (UIKit), written once for both. It is a gesture
-/// recognizer on the text view, which sees the click and lets it through, so the caret still moves and the text is still selected. On AppKit it also shows
+/// Tells a closure the character under the pointer when a text view is Command-clicked (AppKit) or tapped (UIKit), written once for both. On UIKit it is a
+/// tap gesture recognizer, which lets the tap through. On AppKit it is a monitor of the mouse-down events of the window: a text view runs its own loop from the
+/// mouse-down to the mouse-up, in which a gesture recognizer sees nothing, so a Command-click on a link is taken at the mouse-down, before the text view has
+/// it, and is not passed on; any other click is. On AppKit it also shows
 /// the pointing hand while Command is held over a character that `isLink` accepts, as the editors of the system's own tools do. It must be kept: the text
 /// view holds the recognizer, and the recognizer does not hold this.
 @MainActor
@@ -25,14 +27,12 @@ public final class AppUITextViewClickObserver: NSObject {
         self.handler = handler
         super.init()
         #if canImport(AppKit) && !targetEnvironment(macCatalyst)
-            let recognizer = NSClickGestureRecognizer(target: self, action: #selector(clicked(_:)))
-            recognizer.delaysPrimaryMouseButtonEvents = false
-            textView.addGestureRecognizer(recognizer)
             // Moving the pointer, and pressing or letting go of Command with the pointer still, both decide the cursor.
             textView.addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseMoved, .activeInKeyWindow, .inVisibleRect], owner: self, userInfo: nil))
-            monitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .flagsChanged]) { [weak self] event in
-                MainActor.assumeIsolated { self?.updateCursor(command: event.modifierFlags.contains(.command)) }
-                return event
+            monitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .flagsChanged, .leftMouseDown]) { [weak self] event in
+                nonisolated(unsafe) let handled = event
+                let swallowed = MainActor.assumeIsolated { self?.consume(handled) ?? false }
+                return swallowed ? nil : event
             }
         #elseif canImport(UIKit)
             let recognizer = UITapGestureRecognizer(target: self, action: #selector(clicked(_:)))
@@ -63,9 +63,21 @@ public final class AppUITextViewClickObserver: NSObject {
             DispatchQueue.main.async { NSCursor.pointingHand.set() }
         }
 
-        @objc private func clicked(_ recognizer: NSClickGestureRecognizer) {
-            guard let textView else { return }
-            click(at: recognizer.location(in: textView), command: NSEvent.modifierFlags.contains(.command))
+        /// What the monitor does with an event: a mouse-down may be taken; the others only decide the cursor. Whether the event is taken.
+        private func consume(_ event: NSEvent) -> Bool {
+            if event.type == .leftMouseDown {
+                return mouseDown(event)
+            }
+            updateCursor(command: event.modifierFlags.contains(.command))
+            return false
+        }
+
+        /// A mouse-down in the window of the text view: told, and taken, when it is a Command-click on a character of a link.
+        private func mouseDown(_ event: NSEvent) -> Bool {
+            guard let textView, event.window != nil, event.window === textView.window else { return false }
+            let point = textView.convert(event.locationInWindow, from: nil)
+            guard textView.visibleRect.contains(point), event.modifierFlags.contains(.command) else { return false }
+            return click(at: point, command: true)
         }
     #elseif canImport(UIKit)
         @objc private func clicked(_ recognizer: UITapGestureRecognizer) {
@@ -76,9 +88,20 @@ public final class AppUITextViewClickObserver: NSObject {
 
     /// A click at `point` of the text view, with or without Command held, as the recognizer tells it. Only a click with Command (or a tap, where there is no
     /// Command) is told; a host that replays a flow without a window makes the click this way.
-    public func click(at point: CGPoint, command: Bool) {
-        guard command, let textView, let index = characterIndex(at: point, in: textView) else { return }
+    @discardableResult
+    public func click(at point: CGPoint, command: Bool) -> Bool {
+        guard command, let textView, let index = characterIndex(at: point, in: textView), isLink(index) || !isAppKit else { return false }
         handler(index)
+        return true
+    }
+
+    /// Whether this is AppKit, where only a click on a link is taken, so that any other Command-click still reaches the text view. On UIKit a tap anywhere is told.
+    private var isAppKit: Bool {
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            true
+        #else
+            false
+        #endif
     }
 
     /// Whether the pointer at `point` should be a pointing hand: Command is held and the character under it is a link.

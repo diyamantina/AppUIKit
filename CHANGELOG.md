@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- On AppKit a Command-click on a link did nothing: a text view runs its own loop from the mouse-down to the mouse-up, in which a gesture recognizer sees nothing. It is now taken at the mouse-down by a monitor of the window's events, and only when the character is a link, so any other click reaches the text view. Found by sending real mouse events to the real view in a window.
+
 ### Added
 
 - `appuiObserveCommandClick`: tells the UTF-16 index of the character under the pointer when a text view is Command-clicked (AppKit) or tapped (UIKit), through a gesture recognizer that lets the click through, so the caret and selection still work.
