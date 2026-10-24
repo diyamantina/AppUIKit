@@ -58,6 +58,39 @@
             return count
         }
 
+        @Test func `restyling asks the source for the rows again and keeps the selection and the place`() {
+            final class Counting: AppUIRowSource {
+                var rowCount: Int {
+                    500
+                }
+
+                var asked = 0
+                var underlined = false
+                func rows(in range: Range<Int>) -> [AppUIRow] {
+                    asked += 1
+                    return (max(0, range.lowerBound) ..< min(500, range.upperBound)).map {
+                        AppUIRow(text: "row \($0)", gutter: "\($0 + 1)", runs: underlined ? [AppUIRowRun(range: 0 ..< 3, color: .systemBlue, underline: true)] : [])
+                    }
+                }
+            }
+            let source = Counting()
+            let view = AppUIRowView(frame: CGRect(x: 0, y: 0, width: 480, height: 200))
+            view.source = source
+            view.position = Double(40 * view.rowHeight)
+            view.select(AppUIRowPosition(row: 42, column: 1) ... AppUIRowPosition(row: 43, column: 3))
+            _ = ink(in: view, rows: view.visibleRows)
+            let before = source.asked
+            let place = view.position
+            source.underlined = true
+            view.restyle()
+            _ = ink(in: view, rows: view.visibleRows)
+            #expect(source.asked > before, "the rows were asked for again")
+            #expect(view.position == place)
+            #expect(view.selection != nil, "the selection is kept")
+            view.reload()
+            #expect(view.selection == nil, "reload, unlike restyle, clears it")
+        }
+
         @Test func `the rows in view follow the position, and the position stops at both ends`() {
             let (view, source) = makeView(rows: 1000)
             defer { withExtendedLifetime(source) {} }

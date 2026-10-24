@@ -147,6 +147,12 @@ open class AppUIRowView: AppUIInteractiveView {
         redraw()
     }
 
+    /// Asks the source for the text and the runs of the rows again, as when it has found more to say of them (the links in the rows in view), and draws them.
+    /// The rows, the selection and the place are kept, which `reload()` does not.
+    public func restyle() {
+        invalidateLines()
+    }
+
     func fontChanged() {
         // The font is a Core Text font already; making one again from its name would not find a system font, whose name is private.
         let measured: CTFont = font
