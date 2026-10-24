@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `appuiShowsLineNumbers`: a column of line numbers beside a text view, the scroll view's ruler on AppKit and a view over the left edge on UIKit, drawn for the lines in view only. `AppUILineNumbers` finds the line of an offset by search; `appuiUpdateLineNumbers()` refits the column after the font changes.
 - `appuiConfigureForCode` keeps the text 12 points from the edge of the view and turns the system's writing tools off, which put an Apple Intelligence popup over selected code.
 - `appuiScrollToVisible(_:centered:)` lays the text out as far as the range before scrolling, scrolls up, down and sideways (AppKit; UIKit only to the row), and can put the range in the middle of the view. `appuiRect(of:)` and `appuiVisibleRect` say where a range is and what can be seen.
 - `appuiObserveSelection(_:)` and `AppUITextViewSelectionObserver`: a closure told each time the selection or the caret of a text view moves, on AppKit and UIKit.

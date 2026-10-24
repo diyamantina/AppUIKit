@@ -198,4 +198,41 @@ struct AppUITextViewTextTests {
             }
         #endif
     }
+
+    @Test func `the column shows the numbers of the lines in view, and follows the scrolling`() {
+        let (textView, _, text) = tallAndWide()
+        textView.appuiShowsLineNumbers = true
+        #expect(textView.appuiShowsLineNumbers)
+        let first = textView.appuiVisibleLineLabels
+        #expect(first.first?.number == 1, "the top of the text starts at line 1: \(first.map(\.number))")
+        #expect(first.map(\.number) == Array(1 ... first.count), "consecutive from there")
+        let target = (text as NSString).range(of: "line 150")
+        textView.appuiScrollToVisible(target, centered: true)
+        let later = textView.appuiVisibleLineLabels.map(\.number)
+        #expect(later.contains(151), "line 150 is number 151: \(later)")
+        for label in textView.appuiVisibleLineLabels {
+            let start = AppUILineNumbers(text: text).starts[label.number - 1]
+            let rect = textView.appuiRect(of: AppUIRange(location: start, length: 0))
+            #expect(abs(rect.minY - label.fragment.minY) < 1, "the label of line \(label.number) is level with its text")
+        }
+        textView.appuiShowsLineNumbers = false
+        #expect(!textView.appuiShowsLineNumbers)
+    }
+
+    @Test func `the numbers follow an edit of the text`() {
+        let (textView, container) = AppUITextView.appuiMakeScrolling()
+        container.frame = CGRect(x: 0, y: 0, width: 300, height: 120)
+        textView.appuiConfigureForCode(font: AppUIKit.Fonts.monospaced(ofSize: 13))
+        textView.appuiShowsLineNumbers = true
+        textView.appuiString = "a\nb"
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            container.layoutSubtreeIfNeeded()
+        #elseif canImport(UIKit)
+            container.layoutIfNeeded()
+        #endif
+        #expect(textView.appuiVisibleLineLabels.map(\.number) == [1, 2])
+        textView.appuiString = "a\nb\nc\n"
+        #expect(textView.appuiVisibleLineLabels.map(\.number) == [1, 2, 3, 4], "a text ending in a break has an empty last line")
+        textView.appuiUpdateLineNumbers()
+    }
 }
