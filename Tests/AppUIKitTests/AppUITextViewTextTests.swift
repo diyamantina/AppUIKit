@@ -124,4 +124,16 @@ struct AppUITextViewTextTests {
             #expect(textView.contentSize.width <= 200)
         #endif
     }
+
+    @Test func `the selection observer is told where the caret or the selection goes, by the program too`() {
+        let (textView, _) = AppUITextView.appuiMakeScrolling()
+        textView.appuiString = "hello world"
+        var seen: [AppUIRange] = []
+        let observer = textView.appuiObserveSelection { seen.append($0) }
+        textView.appuiSelectedRange = AppUIRange(location: 6, length: 5)
+        textView.appuiSelectedRange = AppUIRange(location: 2, length: 0)
+        #expect(seen.last == AppUIRange(location: 2, length: 0))
+        #expect(seen.contains(AppUIRange(location: 6, length: 5)))
+        withExtendedLifetime(observer) {}
+    }
 }
