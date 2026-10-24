@@ -31,10 +31,11 @@
             return (view, source)
         }
 
-        private func key(_ characters: String, special: NSEvent.SpecialKey? = nil, shift: Bool = false, in view: AppUIRowView) {
+        private func key(_ characters: String, special: NSEvent.SpecialKey? = nil, shift: Bool = false, option: Bool = false, command: Bool = false, in view: AppUIRowView) {
             let text = special.flatMap { UnicodeScalar(UInt32($0.rawValue)).map { String(Character($0)) } } ?? characters
             if let event = NSEvent.keyEvent(
-                with: .keyDown, location: .zero, modifierFlags: shift ? [.shift] : [], timestamp: 0, windowNumber: 0, context: nil, characters: text,
+                with: .keyDown, location: .zero, modifierFlags: flags(shift: shift, option: option, command: command), timestamp: 0, windowNumber: 0, context: nil,
+                characters: text,
                 charactersIgnoringModifiers: text,
                 isARepeat: false, keyCode: 0
             ) {
@@ -162,6 +163,45 @@
             view.setCaret(AppUIRowPosition(row: 2, column: 1))
             key("", special: .home, shift: true, in: view)
             #expect(view.selectedText() == "j")
+        }
+
+        private func flags(shift: Bool, option: Bool, command: Bool) -> NSEvent.ModifierFlags {
+            var result: NSEvent.ModifierFlags = []
+            if shift {
+                result.insert(.shift)
+            }
+            if option {
+                result.insert(.option)
+            }
+            if command {
+                result.insert(.command)
+            }
+            return result
+        }
+
+        @Test func `option goes by words and command to the ends of the row and the document`() {
+            let (view, source) = makeView(["one two  three", "", "four"])
+            defer { withExtendedLifetime(source) {} }
+            view.setCaret(AppUIRowPosition(row: 0, column: 0))
+            key("", special: .rightArrow, option: true, in: view)
+            #expect(view.caret == AppUIRowPosition(row: 0, column: 3), "to the end of the first word")
+            key("", special: .rightArrow, option: true, in: view)
+            #expect(view.caret == AppUIRowPosition(row: 0, column: 7))
+            key("", special: .leftArrow, option: true, in: view)
+            #expect(view.caret == AppUIRowPosition(row: 0, column: 4), "back to the start of a word")
+            key("", special: .rightArrow, shift: true, option: true, in: view)
+            #expect(view.selectedText() == "two")
+            view.setCaret(AppUIRowPosition(row: 0, column: 14))
+            key("", special: .rightArrow, option: true, in: view)
+            #expect(view.caret == AppUIRowPosition(row: 1, column: 0), "past the end of a row it goes to the next")
+            key("", special: .downArrow, command: true, in: view)
+            #expect(view.caret == AppUIRowPosition(row: 2, column: 4))
+            key("", special: .upArrow, command: true, in: view)
+            #expect(view.caret == AppUIRowPosition(row: 0, column: 0))
+            key("", special: .rightArrow, command: true, in: view)
+            #expect(view.caret == AppUIRowPosition(row: 0, column: 14))
+            key("", special: .leftArrow, shift: true, command: true, in: view)
+            #expect(view.selectedText() == "one two  three")
         }
     }
 #endif

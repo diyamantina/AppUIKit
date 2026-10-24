@@ -390,7 +390,7 @@ open class AppUIRowView: AppUIInteractiveView {
         override open func keyDown(with event: NSEvent) {
             let page = bounds.height - rowHeight
             let command = event.modifierFlags.contains(.command)
-            if isEditable, !command, !event.modifierFlags.contains(.control), typed(event) {
+            if isEditable, !event.modifierFlags.contains(.control), typed(event) {
                 return
             }
             switch event.specialKey {
@@ -408,9 +408,11 @@ open class AppUIRowView: AppUIInteractiveView {
 
         /// What a key does to a view that can be edited: moves the caret, or is given to the owner as what was typed. True when it was one of those.
         private func typed(_ event: NSEvent) -> Bool {
-            if moved(by: event.specialKey, extending: event.modifierFlags.contains(.shift)) {
+            let flags = event.modifierFlags
+            if moved(by: event.specialKey, extending: flags.contains(.shift), option: flags.contains(.option), command: flags.contains(.command)) {
                 return true
             }
+            guard !flags.contains(.command) else { return false }
             switch event.specialKey {
             case .delete: onEdit?(.deleteBackward)
             case .deleteForward: onEdit?(.deleteForward)
@@ -422,41 +424,6 @@ open class AppUIRowView: AppUIInteractiveView {
             default: return false
             }
             return true
-        }
-
-        /// The keys that move the caret, or with Shift extend the selection; true when `key` was one.
-        private func moved(by key: NSEvent.SpecialKey?, extending: Bool) -> Bool {
-            switch key {
-            case .leftArrow: go(columns: -1, extending: extending)
-            case .rightArrow: go(columns: 1, extending: extending)
-            case .upArrow: go(rows: -1, extending: extending)
-            case .downArrow: go(rows: 1, extending: extending)
-            case .home: go(toEnd: false, extending: extending)
-            case .end: go(toEnd: true, extending: extending)
-            default: return false
-            }
-            return true
-        }
-
-        /// Moves the caret, or extends the selection, by characters, by rows, or to an edge of the row.
-        private func go(columns: Int = 0, rows: Int = 0, toEnd: Bool? = nil, extending: Bool) {
-            if let toEnd {
-                if extending {
-                    extendSelectionToRowEdge(end: toEnd)
-                } else {
-                    moveCaretToRowEdge(end: toEnd)
-                }
-            } else if rows != 0 {
-                if extending {
-                    extendSelection(rows: rows)
-                } else {
-                    moveCaret(rows: rows)
-                }
-            } else if extending {
-                extendSelection(by: columns)
-            } else {
-                moveCaret(by: columns)
-            }
         }
 
         @objc open func copy(_: Any?) {

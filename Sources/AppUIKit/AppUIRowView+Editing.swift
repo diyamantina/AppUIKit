@@ -149,4 +149,112 @@ public extension AppUIRowView {
         guard let from = head else { return }
         select(to: AppUIRowPosition(row: from.row, column: end ? text(ofRow: from.row).length : 0))
     }
+
+    // MARK: By words and to the ends of the document
+
+    /// Where the word edge nearest from `column` in the direction is in a row, or nil when there is none that way in the row: the end of a word going
+    /// forward, the start of a word going back, as Option with the arrows goes.
+    private func wordEdge(inRow row: Int, from column: Int, forward: Bool) -> Int? {
+        let line = text(ofRow: row)
+        var edges: [Int] = []
+        line.enumerateSubstrings(in: NSRange(location: 0, length: line.length), options: [.byWords, .substringNotRequired]) { _, range, _, _ in
+            edges.append(forward ? NSMaxRange(range) : range.location)
+        }
+        return forward ? edges.first { $0 > column } : edges.last { $0 < column }
+    }
+
+    /// The place a move by a word from `from` ends at: the next word edge in the row, else the edge of the next row that way.
+    private func wordPlace(from: AppUIRowPosition, forward: Bool) -> AppUIRowPosition {
+        if let edge = wordEdge(inRow: from.row, from: from.column, forward: forward) {
+            return AppUIRowPosition(row: from.row, column: edge)
+        }
+        let next = from.row + (forward ? 1 : -1)
+        guard next >= 0, next < rowCount else {
+            return AppUIRowPosition(row: from.row, column: forward ? text(ofRow: from.row).length : 0)
+        }
+        return AppUIRowPosition(row: next, column: forward ? 0 : text(ofRow: next).length)
+    }
+
+    /// Moves the caret, or extends the selection, by a word.
+    func moveByWord(forward: Bool, extending: Bool) {
+        guard let from = extending ? head : origin(towardEnd: forward) else { return }
+        let there = wordPlace(from: from, forward: forward)
+        if extending {
+            select(to: there)
+        } else {
+            setCaret(there)
+        }
+    }
+
+    /// Moves the caret, or extends the selection, to the first character of the document or the end of its last row.
+    func moveToDocumentEdge(end: Bool, extending: Bool) {
+        guard rowCount > 0 else { return }
+        let there = end ? AppUIRowPosition(row: rowCount - 1, column: text(ofRow: rowCount - 1).length) : AppUIRowPosition(row: 0, column: 0)
+        if extending {
+            if head == nil {
+                caret = there
+            }
+            select(to: there)
+        } else {
+            setCaret(there)
+        }
+    }
+
+    #if canImport(AppKit)
+
+        // MARK: The keys that move the caret
+
+        /// The keys that move the caret, or with Shift extend the selection; true when `key` was one. Option with left or right goes by a word,
+        /// Command with left or right to the edge of the row, and Command with up or down to the start or the end of the document.
+        internal func moved(by key: NSEvent.SpecialKey?, extending: Bool, option: Bool, command: Bool) -> Bool {
+            if command || option, movedByModifier(key, extending: extending, command: command) {
+                return true
+            }
+            switch key {
+            case .leftArrow: go(columns: -1, extending: extending)
+            case .rightArrow: go(columns: 1, extending: extending)
+            case .upArrow: go(rows: -1, extending: extending)
+            case .downArrow: go(rows: 1, extending: extending)
+            case .home: go(toEnd: false, extending: extending)
+            case .end: go(toEnd: true, extending: extending)
+            default: return false
+            }
+            return true
+        }
+
+        /// The arrows with Command (to the ends of the row and the document) or with Option (by a word); false for any other key.
+        private func movedByModifier(_ key: NSEvent.SpecialKey?, extending: Bool, command: Bool) -> Bool {
+            switch (key, command) {
+            case (.leftArrow, true): go(toEnd: false, extending: extending)
+            case (.rightArrow, true): go(toEnd: true, extending: extending)
+            case (.upArrow, true): moveToDocumentEdge(end: false, extending: extending)
+            case (.downArrow, true): moveToDocumentEdge(end: true, extending: extending)
+            case (.leftArrow, false): moveByWord(forward: false, extending: extending)
+            case (.rightArrow, false): moveByWord(forward: true, extending: extending)
+            default: return false
+            }
+            return true
+        }
+
+        /// Moves the caret, or extends the selection, by characters, by rows, or to an edge of the row.
+        private func go(columns: Int = 0, rows: Int = 0, toEnd: Bool? = nil, extending: Bool) {
+            if let toEnd {
+                if extending {
+                    extendSelectionToRowEdge(end: toEnd)
+                } else {
+                    moveCaretToRowEdge(end: toEnd)
+                }
+            } else if rows != 0 {
+                if extending {
+                    extendSelection(rows: rows)
+                } else {
+                    moveCaret(rows: rows)
+                }
+            } else if extending {
+                extendSelection(by: columns)
+            } else {
+                moveCaret(by: columns)
+            }
+        }
+    #endif
 }
