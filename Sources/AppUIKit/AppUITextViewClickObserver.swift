@@ -74,14 +74,15 @@ public final class AppUITextViewClickObserver: NSObject {
         }
     #endif
 
-    /// A click at `point` of the text view, with or without Command held. Only a click with Command (or a tap, where there is no Command) is told.
-    func click(at point: CGPoint, command: Bool) {
+    /// A click at `point` of the text view, with or without Command held, as the recognizer tells it. Only a click with Command (or a tap, where there is no
+    /// Command) is told; a host that replays a flow without a window makes the click this way.
+    public func click(at point: CGPoint, command: Bool) {
         guard command, let textView, let index = characterIndex(at: point, in: textView) else { return }
         handler(index)
     }
 
     /// Whether the pointer at `point` should be a pointing hand: Command is held and the character under it is a link.
-    func wantsPointer(at point: CGPoint, command: Bool) -> Bool {
+    public func wantsPointer(at point: CGPoint, command: Bool) -> Bool {
         guard command, let textView, let index = characterIndex(at: point, in: textView) else { return false }
         return isLink(index)
     }
