@@ -36,4 +36,28 @@ public enum AppUIWait {
         }
         return true
     }
+
+    /// Whether `value` stayed as it was, for `quiet` seconds in a row, within `timeout`: for what a screen does after something was asked of it, when
+    /// nothing says it is done but its not changing any more.
+    ///
+    /// - Returns: The value it settled at, or nil when it kept changing until the time was up.
+    @MainActor
+    public static func settled<Value: Equatable>(
+        quiet: TimeInterval = 1, timeout: TimeInterval = defaultTimeout, interval: TimeInterval = 0.05, _ read: () -> Value
+    ) -> Value? {
+        var last = read()
+        var since = Date()
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            _ = until(timeout: min(interval, max(0.001, deadline.timeIntervalSinceNow)), interval: interval) { false }
+            let now = read()
+            if now != last {
+                last = now
+                since = Date()
+            } else if Date().timeIntervalSince(since) >= quiet {
+                return now
+            }
+        }
+        return nil
+    }
 }

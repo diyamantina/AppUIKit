@@ -75,4 +75,25 @@ public extension XCTestCase {
     func waitUntilClickable(_ element: XCUIElement, timeout: TimeInterval = AppUIWait.defaultTimeout, file: StaticString = #filePath, line: UInt = #line) {
         waitUntil("\(element) to be clickable", timeout: timeout, file: file, line: line) { element.exists && element.isHittable }
     }
+
+    /// Waits until the words of some element of `query` are such that `matches` holds of them: for finding a static text by what it says when it has no
+    /// name of its own to be found by.
+    func waitForAnyWords(
+        in query: XCUIElementQuery, _ what: @autoclosure () -> String, timeout: TimeInterval = AppUIWait.defaultTimeout, file: StaticString = #filePath,
+        line: UInt = #line, matching matches: (String) -> Bool
+    ) {
+        waitUntil(what(), timeout: timeout, file: file, line: line) { query.allElementsBoundByIndex.contains { matches($0.words) } }
+    }
+
+    /// Waits until the words of `element` have stopped changing for `quiet` seconds, and gives them; fails the test when they never do.
+    @discardableResult
+    func waitUntilStill(
+        _ element: XCUIElement, for quiet: TimeInterval = 1, timeout: TimeInterval = AppUIWait.defaultTimeout, file: StaticString = #filePath, line: UInt = #line
+    ) -> String {
+        guard let settled = AppUIWait.settled(quiet: quiet, timeout: timeout, { element.exists ? element.words : "" }) else {
+            XCTFail("Waited \(Int(timeout)) seconds for \(element) to stop changing", file: file, line: line)
+            return ""
+        }
+        return settled
+    }
 }

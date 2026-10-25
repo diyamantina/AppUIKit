@@ -73,4 +73,19 @@ struct AppUIWaitTests {
         }
         #expect(looks >= 3 && looks <= 12, "looked \(looks) times")
     }
+
+    @Test func `a value that stops changing is given when it has been still for as long as was asked, and one that never does is not`() {
+        // It changes for a while, then stays.
+        let start = Date()
+        let settled = AppUIWait
+            .settled(quiet: 0.2, timeout: 5, interval: 0.02) { Int(Date().timeIntervalSince(start) / 0.3) < 2 ? Int(Date().timeIntervalSince(start) / 0.05) : 999 }
+        #expect(settled == 999)
+        #expect(Date().timeIntervalSince(start) >= 0.8, "it was still only after 0.6 seconds, and for 0.2 more")
+        // It never stops.
+        var counter = 0
+        #expect(AppUIWait.settled(quiet: 0.3, timeout: 0.6, interval: 0.02) {
+            counter += 1
+            return counter
+        } == nil)
+    }
 }
