@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Input methods in `AppUIRowView`. Text an input method composes at the caret (kana, pinyin, hangul, an accent waiting for its letter, the accent menu of a held key, dictation) is drawn in the row where it will be, underlined, and reaches `onEdit` once, as one `.insert`, when it is settled; a selection is replaced when composing begins, a click or losing focus settles it where it is, Escape throws it away, and turning editing off drops it. On the Mac the view is an `NSTextInputClient` (keys go to the input system first; `doCommand(by:)` maps the line break, deletes, tab); on the iPad it is a `UITextInput` (marked text, ranges and positions, rects, and the input delegate told around each change) in place of a `UIKeyInput`. The text the system speaks of is the row of the caret as it is shown, so a file of any size costs one row. Held on the Mac by calls of every client method and pixels of the composition, and on the iPad simulator by calls of the `UITextInput` methods. Not tried with a real input method on a device.
 - `AppUIVectorIcon`: a picture made of paths on a square grid (outlines of a given width, fillings), drawn in one colour at any size. A row of `AppUITreeView` (`AppUITreeRow.icon`) shows it in place of its symbol when its source has drawn the picture itself. Held by pixels: the filling is solid, the part of the grid left empty is clear, and the symbol is not drawn as well.
 
 ### Fixed

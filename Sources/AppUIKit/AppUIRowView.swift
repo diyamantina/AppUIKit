@@ -82,6 +82,7 @@ open class AppUIRowView: AppUIInteractiveView {
     public var isEditable = false {
         didSet {
             if oldValue != isEditable {
+                composition = nil
                 redraw()
                 #if !(canImport(AppKit) && !targetEnvironment(macCatalyst)) && canImport(UIKit)
                     if !isEditable {
@@ -97,6 +98,16 @@ open class AppUIRowView: AppUIInteractiveView {
     public internal(set) var caret: AppUIRowPosition? {
         didSet {
             if oldValue != caret {
+                redraw()
+            }
+        }
+    }
+
+    /// Text an input method is composing at the caret (the kana before they are turned into characters, the accent waiting for its letter): drawn where it
+    /// will be, underlined, and not in the text of the owner until it is committed, as one `AppUIRowEdit.insert`.
+    public internal(set) var composition: AppUIRowComposition? {
+        didSet {
+            if oldValue != composition {
                 redraw()
             }
         }
@@ -186,6 +197,9 @@ open class AppUIRowView: AppUIInteractiveView {
         selection = nil
         selectionAnchor = nil
         rowCount = source?.rowCount ?? 0
+        if let composition, composition.row >= rowCount {
+            self.composition = nil
+        }
         widestRow = 0
         position = min(position, maximumPosition)
         redraw()
@@ -238,7 +252,7 @@ open class AppUIRowView: AppUIInteractiveView {
         gutterDigits > 0 ? ceil(CGFloat(gutterDigits) * characterWidth) + 16 : 0
     }
 
-    private func attributed(_ row: AppUIRow) -> NSAttributedString {
+    func attributed(_ row: AppUIRow) -> NSAttributedString {
         let text = NSMutableAttributedString(string: row.text, attributes: [
             .font: font,
             NSAttributedString.Key(kCTForegroundColorAttributeName as String): textColor.cgColor,
@@ -316,7 +330,7 @@ open class AppUIRowView: AppUIInteractiveView {
             context.clip(to: CGRect(x: textLeft, y: top, width: max(0, bounds.width - textLeft), height: rowHeight))
             context.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
             context.textPosition = CGPoint(x: textLeft + 6 - horizontalOffset, y: top + ascent + 1)
-            CTLineDraw(cached.line, context)
+            CTLineDraw(composedLine(of: cached, row: number) ?? cached.line, context)
             context.restoreGState()
             if let gutter = cached.gutter {
                 context.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
@@ -329,11 +343,17 @@ open class AppUIRowView: AppUIInteractiveView {
         drawScroller(in: context)
     }
 
-    /// The insertion point: a line the height of the row at the caret, when the rows can be edited and nothing is selected.
+    /// The insertion point: a line the height of the row at the caret, when the rows can be edited and nothing is selected; inside the text being composed
+    /// at the place the input method says, while there is some.
     private func drawCaret(in context: CGContext) {
         guard isEditable, selection == nil, let caret, visibleRows.contains(caret.row), let cached = cache[caret.row] else { return }
-        let length = (cached.row.text as NSString).length
-        let x = gutterWidth + 6 - horizontalOffset + CTLineGetOffsetForStringIndex(cached.line, min(length, caret.column), nil)
+        let x: CGFloat
+        if let composition, composition.row == caret.row, let line = composedLine(of: cached, row: caret.row) {
+            x = gutterWidth + 6 - horizontalOffset + CTLineGetOffsetForStringIndex(line, composition.column + composition.selected.location, nil)
+        } else {
+            let length = (cached.row.text as NSString).length
+            x = gutterWidth + 6 - horizontalOffset + CTLineGetOffsetForStringIndex(cached.line, min(length, caret.column), nil)
+        }
         let top = CGFloat(Double(caret.row) * Double(rowHeight) - position)
         context.setFillColor(textColor.cgColor)
         context.fill(CGRect(x: x, y: top + 1, width: 1.5, height: rowHeight - 2))
@@ -380,7 +400,16 @@ open class AppUIRowView: AppUIInteractiveView {
             true
         }
 
+        override open func resignFirstResponder() -> Bool {
+            endComposition(commit: true)
+            inputContext?.discardMarkedText()
+            return super.resignFirstResponder()
+        }
+
         override open func mouseDown(with event: NSEvent) {
+            // What is being composed is settled where it is before the caret moves.
+            endComposition(commit: true)
+            inputContext?.discardMarkedText()
             pressedWithCommand = event.modifierFlags.contains(.command)
             pressCount = event.clickCount
             window?.makeFirstResponder(self)
@@ -396,7 +425,7 @@ open class AppUIRowView: AppUIInteractiveView {
         override open func keyDown(with event: NSEvent) {
             let page = bounds.height - rowHeight
             let command = event.modifierFlags.contains(.command)
-            if isEditable, !event.modifierFlags.contains(.control), typed(event) {
+            if isEditable, !event.modifierFlags.contains(.control), handledByInputSystemOrAsTyped(event) {
                 return
             }
             switch event.specialKey {
@@ -410,6 +439,15 @@ open class AppUIRowView: AppUIInteractiveView {
             case .end: scroll(byY: .greatestFiniteMagnitude)
             default: super.keyDown(with: event)
             }
+        }
+
+        /// Text goes through the input system first, so that accents, kana and the rest are made into the text they stand for; a view with no window has none,
+        /// and then the keys are what they say. True when the key was dealt with.
+        private func handledByInputSystemOrAsTyped(_ event: NSEvent) -> Bool {
+            if belongsToInputSystem(event), inputContext?.handleEvent(event) == true {
+                return true
+            }
+            return typed(event)
         }
 
         /// What a key does to a view that can be edited: moves the caret, or is given to the owner as what was typed. True when it was one of those.
@@ -546,6 +584,11 @@ open class AppUIRowView: AppUIInteractiveView {
 
         /// Where paste reads the text from: the pasteboard of the system, which is not open to every process (a test run of the simulator is refused it).
         var pasteboardText: () -> String? = { AppUIKit.Pasteboard.paste() }
+
+        /// Told by this view when the text or the selection changes under the keyboard, as the keyboard tells it to follow.
+        public weak var inputDelegate: (any UITextInputDelegate)?
+        /// How the keyboard asks marked text to look; the view underlines it itself.
+        public var composedStyle: [NSAttributedString.Key: Any]?
 
         // What is typed is the person's own: nothing is corrected, capitalized, completed or turned into a typographer's mark.
         public var autocorrectionType: UITextAutocorrectionType = .no

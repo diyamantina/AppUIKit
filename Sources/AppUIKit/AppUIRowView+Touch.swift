@@ -146,28 +146,6 @@
         }
     }
 
-    /// The text of the keyboard, the one on the screen and one that is attached, goes to the owner of the rows as what was typed.
-    extension AppUIRowView: @MainActor UIKeyInput {
-        public var hasText: Bool {
-            // The delete key of the keyboard on the screen is dead when this is false; what there is to delete is for the owner to say.
-            true
-        }
-
-        public func insertText(_ text: String) {
-            guard isEditable, !text.isEmpty else { return }
-            switch text {
-            case "\n": onEdit?(.newline)
-            case "\t": onEdit?(.insert("  "))
-            default: onEdit?(.insert(text))
-            }
-        }
-
-        public func deleteBackward() {
-            guard isEditable else { return }
-            onEdit?(.deleteBackward)
-        }
-    }
-
     extension AppUIRowView: @MainActor UIEditMenuInteractionDelegate {
         public func editMenuInteraction(_: UIEditMenuInteraction, menuFor _: UIEditMenuConfiguration, suggestedActions _: [UIMenuElement]) -> UIMenu? {
             var actions = [UIAction(title: "Copy", image: UIImage(systemName: "doc.on.doc")) { [weak self] _ in self?.copySelection() }]

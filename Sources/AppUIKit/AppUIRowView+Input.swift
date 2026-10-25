@@ -109,6 +109,8 @@ public extension AppUIRowView {
     // MARK: Pressing
 
     internal func handlePressBegan(at point: CGPoint, scrollerWidth: CGFloat = AppUIRowView.scrollerHitWidth) {
+        // What is being composed is settled where it is before the caret moves.
+        endComposition(commit: true)
         pressMoved = false
         if point.x >= bounds.width - scrollerWidth, let knob = knobRect {
             if knob.contains(CGPoint(x: knob.midX, y: point.y)) {
