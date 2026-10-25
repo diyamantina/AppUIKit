@@ -113,6 +113,15 @@ open class AppUIRowView: AppUIInteractiveView {
         }
     }
 
+    /// The width of one level of indentation in spaces, when the rows are drawn with a vertical guide through each level (see ``AppUIIndentGuides``); nil draws none.
+    public var indentGuideUnit: Int? {
+        didSet {
+            if oldValue != indentGuideUnit {
+                redraw()
+            }
+        }
+    }
+
     /// Told what was typed. The owner changes its text and then shows the rows again and puts the caret where it belongs.
     public var onEdit: ((AppUIRowEdit) -> Void)?
     /// Told that Undo or Redo was chosen, and asked whether each can be done, for the menu.
@@ -326,6 +335,7 @@ open class AppUIRowView: AppUIInteractiveView {
             let top = CGFloat(Double(number) * Double(rowHeight) - position)
             guard top + rowHeight > dirtyRect.minY, top < dirtyRect.maxY else { continue }
             drawSelection(of: number, cached: cached, top: top, textLeft: textLeft, in: context)
+            drawIndentGuides(ofRow: number, top: top, textLeft: textLeft, in: context)
             context.saveGState()
             context.clip(to: CGRect(x: textLeft, y: top, width: max(0, bounds.width - textLeft), height: rowHeight))
             context.textMatrix = CGAffineTransform(scaleX: 1, y: -1)

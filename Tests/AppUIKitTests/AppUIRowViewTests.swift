@@ -287,3 +287,85 @@
         }
     }
 #endif
+
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+    import AppKit
+
+    /// The guides through the indentation of rows, held by pixels.
+    @MainActor
+    struct AppUIRowViewIndentGuideTests {
+        final class Lines: AppUIRowSource {
+            let texts: [String]
+            init(_ texts: [String]) {
+                self.texts = texts
+            }
+
+            var rowCount: Int {
+                texts.count
+            }
+
+            func rows(in range: Range<Int>) -> [AppUIRow] {
+                (max(0, range.lowerBound) ..< min(texts.count, range.upperBound)).map { AppUIRow(text: texts[$0]) }
+            }
+        }
+
+        private func make(_ texts: [String], unit: Int?) throws -> (AppUIRowView, Lines, NSBitmapImageRep) {
+            let source = Lines(texts)
+            let view = AppUIRowView(frame: CGRect(x: 0, y: 0, width: 300, height: CGFloat(texts.count) * 20 + 8))
+            view.canvasColor = .white
+            view.textColor = .white
+            view.source = source
+            view.indentGuideUnit = unit
+            let image = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+            view.cacheDisplay(in: view.bounds, to: image)
+            return (view, source, image)
+        }
+
+        /// The place, in points, of the middle of the pixel a guide of `level` (from 1) is drawn on in a view of `unit` spaces to a level.
+        private func guideX(_ level: Int, unit: Int, view: AppUIRowView, image: NSBitmapImageRep) -> CGFloat {
+            let scale = CGFloat(image.pixelsWide) / view.bounds.width
+            let x = view.gutterWidth + 6 + CGFloat((level - 1) * unit) * view.characterWidth
+            return AppUIIndentGuides.rect(x: x, top: 0, bottom: 1, scale: scale).minX + 0.5 / scale
+        }
+
+        /// Whether the pixel at a place, in points, is not the white of the canvas.
+        private func inked(_ image: NSBitmapImageRep, _ view: AppUIRowView, x: CGFloat, y: CGFloat) -> Bool {
+            let scale = CGFloat(image.pixelsWide) / view.bounds.width
+            guard let color = image.colorAt(x: Int(x * scale), y: Int(y * scale))?.usingColorSpace(.deviceRGB) else { return false }
+            return color.redComponent < 0.97 || color.greenComponent < 0.97 || color.blueComponent < 0.97
+        }
+
+        @Test func `a row nested two levels deep has a guide at the left edge of each level, none beyond, and none when guides are off`() throws {
+            let (view, source, on) = try make(["a", "  b", "    c", "    d", "  e"], unit: 2)
+            defer { withExtendedLifetime(source) {} }
+            let rowC = view.top(ofRow: 2) + view.rowHeight / 2
+            #expect(inked(on, view, x: guideX(1, unit: 2, view: view, image: on), y: rowC), "level 1 at column 0")
+            #expect(inked(on, view, x: guideX(2, unit: 2, view: view, image: on), y: rowC), "level 2 at column 2")
+            #expect(!inked(on, view, x: guideX(3, unit: 2, view: view, image: on), y: rowC), "no third level: the text begins at column 4")
+            let rowA = view.top(ofRow: 0) + view.rowHeight / 2
+            #expect(!inked(on, view, x: guideX(1, unit: 2, view: view, image: on), y: rowA), "a row that is not indented has no guide")
+            let rowB = view.top(ofRow: 1) + view.rowHeight / 2
+            #expect(inked(on, view, x: guideX(1, unit: 2, view: view, image: on), y: rowB) && !inked(on, view, x: guideX(2, unit: 2, view: view, image: on), y: rowB))
+            let (offView, offSource, off) = try make(["a", "  b", "    c"], unit: nil)
+            defer { withExtendedLifetime(offSource) {} }
+            #expect(!inked(off, offView, x: guideX(1, unit: 2, view: offView, image: off), y: offView.top(ofRow: 2) + offView.rowHeight / 2))
+        }
+
+        @Test func `a guide runs unbroken from one row into the next, and through a blank row between two deep ones`() throws {
+            let (view, source, image) = try make(["x", "  a", "", "  b", "x"], unit: 2)
+            defer { withExtendedLifetime(source) {} }
+            let column = guideX(1, unit: 2, view: view, image: image)
+            var broken = 0
+            // From the top of the first indented row to the bottom of the last, at the column of the first guide.
+            var y = view.top(ofRow: 1)
+            while y < view.top(ofRow: 4) - 0.5 {
+                if !inked(image, view, x: column, y: y) {
+                    broken += 1
+                }
+                y += 0.5
+            }
+            #expect(broken == 0, "\(broken) gaps in a guide that joins three rows")
+            #expect(!inked(image, view, x: column, y: view.top(ofRow: 4) + view.rowHeight / 2), "and stops where the block does")
+        }
+    }
+#endif
