@@ -10,12 +10,15 @@ let package = Package(
     ],
     products: [
         .library(name: "AppUIKit", targets: ["AppUIKit"]),
+        // What a UI test of an app built on AppUIKit waits with. It links XCTest, so only test targets depend on it.
+        .library(name: "AppUITesting", targets: ["AppUITesting"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-docc-plugin", from: "1.4.3"),
     ],
     targets: [
         .target(name: "AppUIKit"),
-        .testTarget(name: "AppUIKitTests", dependencies: ["AppUIKit"]),
+        .target(name: "AppUITesting"),
+        .testTarget(name: "AppUIKitTests", dependencies: ["AppUIKit", "AppUITesting"]),
     ]
 )
