@@ -16,13 +16,22 @@ public extension XCUIElement {
 
 @MainActor
 public extension XCTestCase {
+    /// Fails the test at the line that asked, and keeps a picture of the screen as it was when the time was up, so that what the app showed can be looked at.
+    func failWaiting(_ message: String, file: StaticString, line: UInt) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = "When the wait ended"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        XCTFail(message, file: file, line: line)
+    }
+
     /// Waits until `condition` holds, and fails the test, saying `what` was waited for, when it does not within `timeout` seconds.
     func waitUntil(
         _ what: @autoclosure () -> String, timeout: TimeInterval = AppUIWait.defaultTimeout, file: StaticString = #filePath, line: UInt = #line,
         _ condition: () -> Bool
     ) {
         if !AppUIWait.until(timeout: timeout, condition) {
-            XCTFail("Waited \(Int(timeout)) seconds for \(what())", file: file, line: line)
+            failWaiting("Waited \(Int(timeout)) seconds for \(what())", file: file, line: line)
         }
     }
 
@@ -33,7 +42,7 @@ public extension XCTestCase {
     ) {
         if !AppUIWait.until(timeout: timeout, { element.exists && matches(element.words) }) {
             let said = element.exists ? String(element.words.prefix(200)).debugDescription : "nothing: it is not there"
-            XCTFail("Waited \(Int(timeout)) seconds for \(what()); the element said \(said)", file: file, line: line)
+            failWaiting("Waited \(Int(timeout)) seconds for \(what()); the element said \(said)", file: file, line: line)
         }
     }
 
@@ -91,7 +100,7 @@ public extension XCTestCase {
         _ element: XCUIElement, for quiet: TimeInterval = 1, timeout: TimeInterval = AppUIWait.defaultTimeout, file: StaticString = #filePath, line: UInt = #line
     ) -> String {
         guard let settled = AppUIWait.settled(quiet: quiet, timeout: timeout, { element.exists ? element.words : "" }) else {
-            XCTFail("Waited \(Int(timeout)) seconds for \(element) to stop changing", file: file, line: line)
+            failWaiting("Waited \(Int(timeout)) seconds for \(element) to stop changing", file: file, line: line)
             return ""
         }
         return settled
