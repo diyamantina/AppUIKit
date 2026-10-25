@@ -83,6 +83,12 @@ open class AppUIRowView: AppUIInteractiveView {
         didSet {
             if oldValue != isEditable {
                 redraw()
+                #if !(canImport(AppKit) && !targetEnvironment(macCatalyst)) && canImport(UIKit)
+                    if !isEditable {
+                        // The keyboard is put away with the right to type.
+                        _ = resignFirstResponder()
+                    }
+                #endif
             }
         }
     }
@@ -409,7 +415,7 @@ open class AppUIRowView: AppUIInteractiveView {
         /// What a key does to a view that can be edited: moves the caret, or is given to the owner as what was typed. True when it was one of those.
         private func typed(_ event: NSEvent) -> Bool {
             let flags = event.modifierFlags
-            if moved(by: event.specialKey, extending: flags.contains(.shift), option: flags.contains(.option), command: flags.contains(.command)) {
+            if moved(by: AppUIRowCaretKey(event.specialKey), extending: flags.contains(.shift), option: flags.contains(.option), command: flags.contains(.command)) {
                 return true
             }
             guard !flags.contains(.command) else { return false }
@@ -503,144 +509,82 @@ open class AppUIRowView: AppUIInteractiveView {
             (visibleText as NSString).length
         }
     #elseif canImport(UIKit)
-        private func installGestures() {
-            let pan = UIPanGestureRecognizer(target: self, action: #selector(panned(_:)))
-            pan.maximumNumberOfTouches = 1
-            addGestureRecognizer(pan)
-            let press = UILongPressGestureRecognizer(target: self, action: #selector(longPressed(_:)))
-            press.minimumPressDuration = 0.35
-            addGestureRecognizer(press)
-            addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapped(_:))))
-            addInteraction(UIEditMenuInteraction(delegate: self))
-        }
-
-        /// A finger is wider than a pointer: it takes hold of the scroller from this far in.
-        static let touchScrollerWidth: CGFloat = 32
-
-        @objc private func panned(_ recognizer: UIPanGestureRecognizer) {
-            let point = recognizer.location(in: self)
-            switch recognizer.state {
-            case .began:
-                // The recognizer begins after the finger has moved a little; the place it went down is that far back.
-                let moved = recognizer.translation(in: self)
-                touchPanBegan(at: CGPoint(x: point.x - moved.x, y: point.y - moved.y))
-                touchPanChanged(by: moved, at: point)
-            case .changed:
-                touchPanChanged(by: recognizer.translation(in: self), at: point)
-            case .ended:
-                touchPanEnded(velocity: recognizer.velocity(in: self), at: point)
-            default:
-                touchPanEnded(velocity: .zero, at: point)
-            }
-            if recognizer.state == .began || recognizer.state == .changed {
-                recognizer.setTranslation(.zero, in: self)
-            }
-        }
-
-        // MARK: What a touch does
-
-        /// A finger went down: a flick still moving the rows stops, and a finger on the scroller takes hold of it.
-        func touchPanBegan(at point: CGPoint) {
-            stopMomentum()
-            touchOnScroller = knobRect != nil && point.x >= bounds.width - Self.touchScrollerWidth
-            if touchOnScroller {
-                handlePressBegan(at: point, scrollerWidth: Self.touchScrollerWidth)
-            }
-        }
-
-        /// The finger moved by `delta` since it last did, and is now at `point`.
-        func touchPanChanged(by delta: CGPoint, at point: CGPoint) {
-            if touchOnScroller {
-                handlePressMoved(at: point)
-            } else {
-                scroll(byY: -delta.y, x: -delta.x)
-            }
-        }
-
-        /// The finger lifted at a speed: the rows go on moving and slow down, as a system scroll view's do.
-        func touchPanEnded(velocity: CGPoint, at point: CGPoint) {
-            if touchOnScroller {
-                handlePressEnded(at: point)
-                touchOnScroller = false
-                return
-            }
-            startMomentum(velocity: -Double(velocity.y))
-        }
-
-        func startMomentum(velocity: Double) {
-            stopMomentum()
-            let flick = AppUIRowMomentum(velocity: velocity)
-            guard flick.isMoving else { return }
-            momentum = flick
-            let link = CADisplayLink(target: self, selector: #selector(momentumFrame(_:)))
-            link.add(to: .main, forMode: .common)
-            momentumLink = link
-        }
-
-        func stopMomentum() {
-            (momentumLink as? CADisplayLink)?.invalidate()
-            momentumLink = nil
-            momentum = nil
-        }
-
-        @objc private func momentumFrame(_ link: CADisplayLink) {
-            advanceMomentum(by: link.targetTimestamp - link.timestamp)
-        }
-
-        /// Moves the rows as far as the flick goes in `seconds` more, and ends it when it has slowed to a stop or reached an end of the rows.
-        func advanceMomentum(by seconds: Double) {
-            guard var flick = momentum else { return }
-            let before = position
-            scroll(byY: CGFloat(flick.advance(by: seconds)))
-            momentum = flick
-            if !flick.isMoving || position == before {
-                stopMomentum()
-            }
-        }
-
-        /// A finger held down: the word under it is selected, and moving the finger takes the selection with it. Lifting leaves a menu to copy it.
-        func touchLongPress(_ state: UIGestureRecognizer.State, at point: CGPoint) {
-            switch state {
-            case .began:
-                stopMomentum()
-                pressCount = 2
-                handlePressBegan(at: point)
-            case .changed:
-                handlePressMoved(at: point)
-            case .ended, .cancelled, .failed:
-                handlePressEnded(at: point)
-                pressCount = 1
-                if state == .ended, selection != nil {
-                    let configuration = UIEditMenuConfiguration(identifier: nil, sourcePoint: point)
-                    (interactions.compactMap { $0 as? UIEditMenuInteraction }).first?.presentEditMenu(with: configuration)
-                }
-            default:
-                break
-            }
-        }
-
-        @objc private func longPressed(_ recognizer: UILongPressGestureRecognizer) {
-            touchLongPress(recognizer.state, at: recognizer.location(in: self))
-        }
-
-        @objc private func tapped(_ recognizer: UITapGestureRecognizer) {
-            stopMomentum()
-            let point = recognizer.location(in: self)
-            if let place = rowPosition(at: point) {
-                onActivate?(place, false)
-            }
-        }
-
         override open var canBecomeFirstResponder: Bool {
             true
         }
 
         override open func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
-            action == #selector(copy(_:)) ? selection != nil : super.canPerformAction(action, withSender: sender)
+            switch action {
+            case #selector(copy(_:)): selection != nil
+            case #selector(cut(_:)): isEditable && selection != nil
+            case #selector(paste(_:)): isEditable && UIPasteboard.general.hasStrings
+            case #selector(selectAll(_:)): rowCount > 0
+            default: super.canPerformAction(action, withSender: sender)
+            }
         }
 
         override open func copy(_: Any?) {
             copySelection()
+        }
+
+        override open func cut(_: Any?) {
+            guard isEditable, selection != nil else { return }
+            copySelection()
+            onEdit?(.deleteBackward)
+        }
+
+        override open func paste(_: Any?) {
+            guard isEditable, let text = pasteboardText(), !text.isEmpty else { return }
+            onEdit?(.insert(text))
+        }
+
+        override open func selectAll(_: Any?) {
+            selectEverything()
+        }
+
+        // MARK: Typing
+
+        /// Where paste reads the text from: the pasteboard of the system, which is not open to every process (a test run of the simulator is refused it).
+        var pasteboardText: () -> String? = { AppUIKit.Pasteboard.paste() }
+
+        // What is typed is the person's own: nothing is corrected, capitalized, completed or turned into a typographer's mark.
+        public var autocorrectionType: UITextAutocorrectionType = .no
+        public var autocapitalizationType: UITextAutocapitalizationType = .none
+        public var spellCheckingType: UITextSpellCheckingType = .no
+        public var smartQuotesType: UITextSmartQuotesType = .no
+        public var smartDashesType: UITextSmartDashesType = .no
+        public var smartInsertDeleteType: UITextSmartInsertDeleteType = .no
+
+        /// What a key of a hardware keyboard that is not text does: the caret keys (with Shift, Option, Command), forward delete, and Command-Z with and
+        /// without Shift for undo and redo. True when it was one of these, so that it is not passed on.
+        func handleKey(_ usage: UIKeyboardHIDUsage, charactersIgnoringModifiers characters: String, modifiers: UIKeyModifierFlags) -> Bool {
+            guard isEditable else { return false }
+            if let key = AppUIRowCaretKey(usage) {
+                return moved(by: key, extending: modifiers.contains(.shift), option: modifiers.contains(.alternate), command: modifiers.contains(.command))
+            }
+            if usage == .keyboardDeleteForward {
+                onEdit?(.deleteForward)
+                return true
+            }
+            if modifiers.contains(.command), characters.lowercased() == "z" {
+                if modifiers.contains(.shift) {
+                    onRedo?()
+                } else {
+                    onUndo?()
+                }
+                return true
+            }
+            return false
+        }
+
+        override open func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+            let rest = presses.filter { press in
+                guard let key = press.key else { return true }
+                return !handleKey(key.keyCode, charactersIgnoringModifiers: key.charactersIgnoringModifiers, modifiers: key.modifierFlags)
+            }
+            if !rest.isEmpty {
+                super.pressesBegan(rest, with: event)
+            }
         }
 
         override open var accessibilityValue: String? {
@@ -649,11 +593,3 @@ open class AppUIRowView: AppUIInteractiveView {
         }
     #endif
 }
-
-#if !(canImport(AppKit) && !targetEnvironment(macCatalyst)) && canImport(UIKit)
-    extension AppUIRowView: @MainActor UIEditMenuInteractionDelegate {
-        public func editMenuInteraction(_: UIEditMenuInteraction, menuFor _: UIEditMenuConfiguration, suggestedActions _: [UIMenuElement]) -> UIMenu? {
-            UIMenu(children: [UIAction(title: "Copy", image: UIImage(systemName: "doc.on.doc")) { [weak self] _ in self?.copySelection() }])
-        }
-    }
-#endif

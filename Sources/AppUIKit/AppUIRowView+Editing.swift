@@ -200,61 +200,58 @@ public extension AppUIRowView {
         }
     }
 
-    #if canImport(AppKit)
+    // MARK: The keys that move the caret
 
-        // MARK: The keys that move the caret
-
-        /// The keys that move the caret, or with Shift extend the selection; true when `key` was one. Option with left or right goes by a word,
-        /// Command with left or right to the edge of the row, and Command with up or down to the start or the end of the document.
-        internal func moved(by key: NSEvent.SpecialKey?, extending: Bool, option: Bool, command: Bool) -> Bool {
-            if command || option, movedByModifier(key, extending: extending, command: command) {
-                return true
-            }
-            switch key {
-            case .leftArrow: go(columns: -1, extending: extending)
-            case .rightArrow: go(columns: 1, extending: extending)
-            case .upArrow: go(rows: -1, extending: extending)
-            case .downArrow: go(rows: 1, extending: extending)
-            case .home: go(toEnd: false, extending: extending)
-            case .end: go(toEnd: true, extending: extending)
-            default: return false
-            }
+    /// The keys that move the caret, or with Shift extend the selection; true when `key` was one. Option with left or right goes by a word,
+    /// Command with left or right to the edge of the row, and Command with up or down to the start or the end of the document.
+    internal func moved(by key: AppUIRowCaretKey?, extending: Bool, option: Bool, command: Bool) -> Bool {
+        if command || option, movedByModifier(key, extending: extending, command: command) {
             return true
         }
-
-        /// The arrows with Command (to the ends of the row and the document) or with Option (by a word); false for any other key.
-        private func movedByModifier(_ key: NSEvent.SpecialKey?, extending: Bool, command: Bool) -> Bool {
-            switch (key, command) {
-            case (.leftArrow, true): go(toEnd: false, extending: extending)
-            case (.rightArrow, true): go(toEnd: true, extending: extending)
-            case (.upArrow, true): moveToDocumentEdge(end: false, extending: extending)
-            case (.downArrow, true): moveToDocumentEdge(end: true, extending: extending)
-            case (.leftArrow, false): moveByWord(forward: false, extending: extending)
-            case (.rightArrow, false): moveByWord(forward: true, extending: extending)
-            default: return false
-            }
-            return true
+        switch key {
+        case .left: go(columns: -1, extending: extending)
+        case .right: go(columns: 1, extending: extending)
+        case .up: go(rows: -1, extending: extending)
+        case .down: go(rows: 1, extending: extending)
+        case .home: go(toEnd: false, extending: extending)
+        case .end: go(toEnd: true, extending: extending)
+        default: return false
         }
+        return true
+    }
 
-        /// Moves the caret, or extends the selection, by characters, by rows, or to an edge of the row.
-        private func go(columns: Int = 0, rows: Int = 0, toEnd: Bool? = nil, extending: Bool) {
-            if let toEnd {
-                if extending {
-                    extendSelectionToRowEdge(end: toEnd)
-                } else {
-                    moveCaretToRowEdge(end: toEnd)
-                }
-            } else if rows != 0 {
-                if extending {
-                    extendSelection(rows: rows)
-                } else {
-                    moveCaret(rows: rows)
-                }
-            } else if extending {
-                extendSelection(by: columns)
+    /// The arrows with Command (to the ends of the row and the document) or with Option (by a word); false for any other key.
+    private func movedByModifier(_ key: AppUIRowCaretKey?, extending: Bool, command: Bool) -> Bool {
+        switch (key, command) {
+        case (.left, true): go(toEnd: false, extending: extending)
+        case (.right, true): go(toEnd: true, extending: extending)
+        case (.up, true): moveToDocumentEdge(end: false, extending: extending)
+        case (.down, true): moveToDocumentEdge(end: true, extending: extending)
+        case (.left, false): moveByWord(forward: false, extending: extending)
+        case (.right, false): moveByWord(forward: true, extending: extending)
+        default: return false
+        }
+        return true
+    }
+
+    /// Moves the caret, or extends the selection, by characters, by rows, or to an edge of the row.
+    private func go(columns: Int = 0, rows: Int = 0, toEnd: Bool? = nil, extending: Bool) {
+        if let toEnd {
+            if extending {
+                extendSelectionToRowEdge(end: toEnd)
             } else {
-                moveCaret(by: columns)
+                moveCaretToRowEdge(end: toEnd)
             }
+        } else if rows != 0 {
+            if extending {
+                extendSelection(rows: rows)
+            } else {
+                moveCaret(rows: rows)
+            }
+        } else if extending {
+            extendSelection(by: columns)
+        } else {
+            moveCaret(by: columns)
         }
-    #endif
+    }
 }
