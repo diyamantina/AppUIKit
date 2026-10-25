@@ -12,6 +12,8 @@ public struct AppUITreeRow: Equatable {
     public var depth: Int
     /// The name of an SF Symbol drawn before the title, or nil for none.
     public var symbol: String?
+    /// A picture made of shapes, drawn before the title in place of the symbol, or nil to draw the symbol.
+    public var icon: AppUIVectorIcon?
     public var title: String
     /// What is drawn at the right edge, in a smaller type.
     public var detail: String
@@ -21,10 +23,12 @@ public struct AppUITreeRow: Equatable {
     public var isLoading: Bool
 
     public init(
-        depth: Int, symbol: String? = nil, title: String, detail: String = "", isExpandable: Bool = false, isExpanded: Bool = false, isLoading: Bool = false
+        depth: Int, symbol: String? = nil, icon: AppUIVectorIcon? = nil, title: String, detail: String = "", isExpandable: Bool = false, isExpanded: Bool = false,
+        isLoading: Bool = false
     ) {
         self.depth = depth
         self.symbol = symbol
+        self.icon = icon
         self.title = title
         self.detail = detail
         self.isExpandable = isExpandable

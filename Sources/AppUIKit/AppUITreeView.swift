@@ -209,7 +209,10 @@ open class AppUITreeView: AppUIInteractiveView {
             )
         }
         x += indentWidth + 2
-        if let symbol = row.symbol {
+        if let icon = row.icon {
+            icon.draw(in: CGRect(x: x, y: middle - size / 2, width: size * 1.3, height: size), color: secondaryColor.cgColor, context: context)
+            x += size * 1.3 + 6
+        } else if let symbol = row.symbol {
             drawSymbol(symbol, in: CGRect(x: x, y: middle - size / 2, width: size * 1.3, height: size), color: secondaryColor, size: size, in: context)
             x += size * 1.3 + 6
         }

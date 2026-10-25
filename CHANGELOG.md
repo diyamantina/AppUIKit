@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `AppUIVectorIcon`: a picture made of paths on a square grid (outlines of a given width, fillings), drawn in one colour at any size. A row of `AppUITreeView` (`AppUITreeRow.icon`) shows it in place of its symbol when its source has drawn the picture itself. Held by pixels: the filling is solid, the part of the grid left empty is clear, and the symbol is not drawn as well.
+
 ### Fixed
 
 - A text view of a very large file stalled for seconds: it laid out every line before showing or scrolling to one (4.6 s to open and 4.7 s to jump to the end of a 13 MB description of 357,000 lines). `appuiConfigureForCode` now allows non-contiguous layout, and `appuiScrollToVisible` scrolls to where the range is estimated to be, lays out the lines then in view and measures again until the range stops moving (0.7 s to open, 11 ms to jump to the end; jumps checked at 50%, 90% and 100% of the file).

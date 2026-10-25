@@ -188,3 +188,75 @@
         }
     }
 #endif
+
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+    /// A row that supplies its own picture shows it in place of a symbol of the system.
+    @MainActor
+    struct AppUITreeViewIconTests {
+        /// A solid square filling the left half of the grid, and an outline of the right half.
+        static let icon = AppUIVectorIcon(grid: 10, width: 1, shapes: [
+            .init(isFilled: true, steps: [.move(x: 0, y: 0), .line(x: 5, y: 0), .line(x: 5, y: 10), .line(x: 0, y: 10), .close]),
+            .init(isFilled: false, steps: [.move(x: 6, y: 5), .cubic(x1: 7, y1: 1, x2: 9, y2: 1, x: 10, y: 5)]),
+        ])
+
+        private final class OneRow: AppUITreeSource {
+            let row: AppUITreeRow
+            var rowCount: Int {
+                1
+            }
+
+            init(_ row: AppUITreeRow) {
+                self.row = row
+            }
+
+            func row(at _: Int) -> AppUITreeRow? {
+                row
+            }
+        }
+
+        private func darkness(of row: AppUITreeRow, column: CGRect) -> Double {
+            let source = OneRow(row)
+            let view = AppUITreeView(frame: CGRect(x: 0, y: 0, width: 200, height: 40))
+            view.textColor = .black
+            view.secondaryColor = .black
+            view.canvasColor = .white
+            view.source = source
+            guard let image = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return -1 }
+            view.cacheDisplay(in: view.bounds, to: image)
+            let scale = CGFloat(image.pixelsHigh) / view.bounds.height
+            var dark = 0
+            var all = 0
+            for pixelY in Int(column.minY * scale) ..< Int(column.maxY * scale) {
+                for pixelX in Int(column.minX * scale) ..< Int(column.maxX * scale) {
+                    all += 1
+                    if let color = image.colorAt(x: pixelX, y: pixelY)?.usingColorSpace(.deviceGray), color.whiteComponent < 0.9 {
+                        dark += 1
+                    }
+                }
+            }
+            return Double(dark) / Double(max(all, 1))
+        }
+
+        @Test func `a row with a picture draws its shapes: the filling is solid and the part of the grid that is empty is clear`() {
+            let size = AppUITreeView(frame: .zero).font.pointSize
+            let row = AppUITreeRow(depth: 0, icon: Self.icon, title: "")
+            let view = AppUITreeView(frame: CGRect(x: 0, y: 0, width: 200, height: 40))
+            let x = 10 + view.indentWidth + 2
+            let middle = view.rowHeight / 2
+            // The picture is a square of the height of the type, centred in a box 1.3 times as wide; its left half is the filling.
+            let side = size
+            let left = CGRect(x: x + (size * 1.3 - side) / 2 + 1, y: middle - side / 2 + 1, width: side / 2 - 2, height: side - 2)
+            let right = CGRect(x: x + (size * 1.3 - side) / 2 + side / 2 + 1, y: middle + side / 4, width: side / 2 - 2, height: side / 4 - 1)
+            #expect(darkness(of: row, column: left) > 0.95, "the filling is solid")
+            #expect(darkness(of: row, column: right) < 0.2, "below the curve there is nothing")
+            #expect(darkness(of: AppUITreeRow(depth: 0, title: ""), column: left) == 0, "without a picture or a symbol there is nothing")
+        }
+
+        @Test func `a picture is drawn in place of the symbol, which is not drawn as well`() {
+            let withBoth = AppUITreeRow(depth: 0, symbol: "circle.fill", icon: Self.icon, title: "")
+            let pictureOnly = AppUITreeRow(depth: 0, icon: Self.icon, title: "")
+            let whole = CGRect(x: 0, y: 0, width: 80, height: 22)
+            #expect(darkness(of: withBoth, column: whole) == darkness(of: pictureOnly, column: whole))
+        }
+    }
+#endif
