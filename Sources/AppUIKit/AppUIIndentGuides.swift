@@ -63,11 +63,12 @@ public enum AppUIIndentGuides {
         (light: (0.80, 0.50, 0.15), dark: (0.93, 0.67, 0.38)),
     ]
 
-    /// The colour of level `level` (counting from 0 at the outermost), as it is for the dark or the light background, at the strength guides are drawn.
-    public static func color(level: Int, dark: Bool, alpha: CGFloat = 0.45) -> CGColor {
+    /// The colour of level `level` (counting from 0 at the outermost), as it is for the dark or the light background, at the strength guides are drawn (a little stronger on a
+    /// light background, where the same colour reads fainter).
+    public static func color(level: Int, dark: Bool, alpha: CGFloat? = nil) -> CGColor {
         let entry = palette[level % palette.count]
         let (red, green, blue) = dark ? entry.dark : entry.light
-        return CGColor(red: red, green: green, blue: blue, alpha: alpha)
+        return CGColor(red: red, green: green, blue: blue, alpha: alpha ?? (dark ? 0.45 : 0.6))
     }
 
     /// A guide as a rectangle one device pixel wide whose left edge is on the pixel grid, `top` to `bottom` high: filled and not stroked, so that it is as sharp
