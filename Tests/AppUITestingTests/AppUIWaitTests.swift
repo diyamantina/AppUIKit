@@ -6,17 +6,21 @@ import Testing
 /// answered no when the time is up, with a last look at the end.
 @MainActor
 struct AppUIWaitTests {
-    /// A flag that another thread sets and this one reads.
-    final class Flag: @unchecked Sendable {
-        private let lock = NSLock()
-        private var isSet = false
+    /// A flag that another thread sets once and this one reads: a dispatch group that is entered when the flag is made and left when it is set, which may be asked
+    /// whether it is done without waiting.
+    final class Flag: Sendable {
+        private let group = DispatchGroup()
+
+        init() {
+            group.enter()
+        }
 
         func set() {
-            lock.withLock { isSet = true }
+            group.leave()
         }
 
         var value: Bool {
-            lock.withLock { isSet }
+            group.wait(timeout: .now()) == .success
         }
     }
 

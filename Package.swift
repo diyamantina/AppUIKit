@@ -20,5 +20,6 @@ let package = Package(
         .target(name: "AppUIKit"),
         .target(name: "AppUITesting"),
         .testTarget(name: "AppUIKitTests", dependencies: ["AppUIKit", "AppUITesting"]),
+        .testTarget(name: "AppUITestingTests", dependencies: ["AppUITesting"]),
     ]
 )

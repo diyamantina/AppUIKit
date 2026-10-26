@@ -61,7 +61,14 @@ public extension AppUIKit {
                 controller.setToRecipients(parts.recipients)
                 controller.setSubject(parts.subject)
                 controller.setMessageBody(message.body, isHTML: false)
-                if let attachment = message.attachment, let data = try? Data(contentsOf: attachment) {
+                if let attachment = message.attachment {
+                    // A message that was to carry a file is not sent without it: if the file cannot be read, the mail is not composed, and the caller is told so.
+                    let data: Data
+                    do {
+                        data = try Data(contentsOf: attachment)
+                    } catch {
+                        return false
+                    }
                     controller.addAttachmentData(data, mimeType: "application/zip", fileName: attachment.lastPathComponent)
                 }
                 AppUIMailPresentation.closeWhenFinished(controller)

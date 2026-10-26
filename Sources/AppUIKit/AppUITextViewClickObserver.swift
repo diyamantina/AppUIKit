@@ -18,7 +18,7 @@ public final class AppUITextViewClickObserver: NSObject {
     private let isLink: @MainActor (Int) -> Bool
     private weak var textView: AppUITextView?
     #if canImport(AppKit) && !targetEnvironment(macCatalyst)
-        private nonisolated(unsafe) var monitor: Any?
+        private var monitor: AppUIEventMonitor?
     #endif
 
     init(textView: AppUITextView, isLink: @escaping @MainActor (Int) -> Bool, handler: @escaping @MainActor (Int) -> Void) {
@@ -29,23 +29,14 @@ public final class AppUITextViewClickObserver: NSObject {
         #if canImport(AppKit) && !targetEnvironment(macCatalyst)
             // Moving the pointer, and pressing or letting go of Command with the pointer still, both decide the cursor.
             textView.addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseMoved, .activeInKeyWindow, .inVisibleRect], owner: self, userInfo: nil))
-            monitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .flagsChanged, .leftMouseDown]) { [weak self] event in
-                nonisolated(unsafe) let handled = event
-                let swallowed = MainActor.assumeIsolated { self?.consume(handled) ?? false }
+            monitor = AppUIEventMonitor(matching: [.mouseMoved, .flagsChanged, .leftMouseDown]) { [weak self] event in
+                let swallowed = MainActor.assumeIsolated { self?.consume(event) ?? false }
                 return swallowed ? nil : event
             }
         #elseif canImport(UIKit)
             let recognizer = UITapGestureRecognizer(target: self, action: #selector(clicked(_:)))
             recognizer.cancelsTouchesInView = false
             textView.addGestureRecognizer(recognizer)
-        #endif
-    }
-
-    deinit {
-        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
-            if let monitor {
-                NSEvent.removeMonitor(monitor)
-            }
         #endif
     }
 
@@ -60,7 +51,7 @@ public final class AppUITextViewClickObserver: NSObject {
             let point = textView.convert(window.mouseLocationOutsideOfEventStream, from: nil)
             guard textView.visibleRect.contains(point), wantsPointer(at: point, command: command) else { return }
             // The text view sets its own cursor as the event is delivered, after this; setting ours on the next turn of the run loop leaves ours.
-            DispatchQueue.main.async { NSCursor.pointingHand.set() }
+            RunLoop.main.perform(inModes: [.common]) { MainActor.assumeIsolated { NSCursor.pointingHand.set() } }
         }
 
         /// What the monitor does with an event: a mouse-down may be taken; the others only decide the cursor. Whether the event is taken.

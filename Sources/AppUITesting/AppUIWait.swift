@@ -27,12 +27,14 @@ public enum AppUIWait {
             let remaining = deadline.timeIntervalSinceNow
             guard remaining > 0 else { return condition() }
             let until = Date().addingTimeInterval(min(max(0.001, interval), remaining))
-            RunLoop.current.run(mode: .default, before: until)
-            // The run loop returns at once when it has nothing to run; the rest of the interval is not spent looking.
-            let rest = until.timeIntervalSinceNow
-            if rest > 0 {
-                Thread.sleep(forTimeInterval: rest)
+            // A timer due at the end of the interval keeps the run loop waiting for it, and the loop serves what else arrives meanwhile; with nothing to wait for it
+            // would return at once, and the UI would be looked at as often as the loop can spin.
+            let pacer = Timer(fire: until, interval: 0, repeats: false) { _ in }
+            RunLoop.current.add(pacer, forMode: .default)
+            while until.timeIntervalSinceNow > 0 {
+                RunLoop.current.run(mode: .default, before: until)
             }
+            pacer.invalidate()
         }
         return true
     }

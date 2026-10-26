@@ -61,14 +61,19 @@ public struct AppUIContextEntry {
         }
     }
 
-    private nonisolated(unsafe) var handlerKey: UInt8 = 0
+    /// The key the handler is kept under on the view: the address of a class made for the purpose, which is one address for the whole process and is no variable.
+    private final class HandlerKey {}
+
+    private var handlerKey: UnsafeRawPointer {
+        unsafeBitCast(HandlerKey.self, to: UnsafeRawPointer.self)
+    }
 
     public extension AppUIView {
         /// Gives the view a context menu (a secondary click) whose sections are asked for each time it opens, so it shows the state of that moment: AppKit's menu, built from the
         /// entries, with a separator between sections.
         func appuiSetContextMenu(sections: @escaping @MainActor () -> [[AppUIContextEntry]]) {
             let handler = ContextMenuHandler(sections: sections)
-            objc_setAssociatedObject(self, &handlerKey, handler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, handlerKey, handler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             let menu = NSMenu()
             menu.delegate = handler
             self.menu = menu
@@ -100,14 +105,19 @@ public struct AppUIContextEntry {
         }
     }
 
-    private nonisolated(unsafe) var handlerKey: UInt8 = 0
+    /// The key the handler is kept under on the view: the address of a class made for the purpose, which is one address for the whole process and is no variable.
+    private final class HandlerKey {}
+
+    private var handlerKey: UnsafeRawPointer {
+        unsafeBitCast(HandlerKey.self, to: UnsafeRawPointer.self)
+    }
 
     public extension AppUIView {
         /// Gives the view a context menu (a secondary click, a long press) whose sections are asked for each time it opens, so it shows the state of that moment: a `UIMenu` of
         /// inline sections of actions.
         func appuiSetContextMenu(sections: @escaping @MainActor () -> [[AppUIContextEntry]]) {
             let handler = ContextMenuHandler(sections: sections)
-            objc_setAssociatedObject(self, &handlerKey, handler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, handlerKey, handler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             addInteraction(UIContextMenuInteraction(delegate: handler))
         }
     }

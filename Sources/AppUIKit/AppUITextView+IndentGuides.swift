@@ -61,7 +61,7 @@ enum AppUIIndentGuideText {
             didSet { needsDisplay = true }
         }
 
-        private nonisolated(unsafe) var editObserver: NSObjectProtocol?
+        private var editObservation: AppUINotificationObservation?
 
         init(textView: NSTextView, unit: Int) {
             self.textView = textView
@@ -69,9 +69,7 @@ enum AppUIIndentGuideText {
             super.init(frame: textView.bounds)
             autoresizingMask = [.width, .height]
             if let storage = textView.textStorage {
-                editObserver = NotificationCenter.default.addObserver(
-                    forName: NSTextStorage.didProcessEditingNotification, object: storage, queue: .main
-                ) { [weak self] note in
+                editObservation = AppUINotificationObservation(name: NSTextStorage.didProcessEditingNotification, object: storage) { [weak self] note in
                     // Coloring edits attributes only, which moves no line.
                     let changed = (note.object as? NSTextStorage)?.editedMask.contains(.editedCharacters) ?? true
                     MainActor.assumeIsolated {
@@ -80,12 +78,6 @@ enum AppUIIndentGuideText {
                         }
                     }
                 }
-            }
-        }
-
-        deinit {
-            if let editObserver {
-                NotificationCenter.default.removeObserver(editObserver)
             }
         }
 
@@ -140,7 +132,7 @@ enum AppUIIndentGuideText {
         }
 
         private var offsetObservation: NSKeyValueObservation?
-        private nonisolated(unsafe) var editObserver: NSObjectProtocol?
+        private var editObservation: AppUINotificationObservation?
 
         init(textView: UITextView, unit: Int) {
             self.textView = textView
@@ -152,9 +144,7 @@ enum AppUIIndentGuideText {
             offsetObservation = textView.observe(\.contentOffset) { [weak self] _, _ in
                 MainActor.assumeIsolated { self?.follow() }
             }
-            editObserver = NotificationCenter.default.addObserver(
-                forName: NSTextStorage.didProcessEditingNotification, object: textView.textStorage, queue: .main
-            ) { [weak self] note in
+            editObservation = AppUINotificationObservation(name: NSTextStorage.didProcessEditingNotification, object: textView.textStorage) { [weak self] note in
                 let changed = (note.object as? NSTextStorage)?.editedMask.contains(.editedCharacters) ?? true
                 MainActor.assumeIsolated {
                     if changed {
@@ -163,12 +153,6 @@ enum AppUIIndentGuideText {
                 }
             }
             follow()
-        }
-
-        deinit {
-            if let editObserver {
-                NotificationCenter.default.removeObserver(editObserver)
-            }
         }
 
         @available(*, unavailable)

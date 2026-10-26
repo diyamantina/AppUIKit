@@ -9,8 +9,8 @@ import Foundation
     final class AppUILineNumberRuler: NSRulerView {
         private weak var textView: NSTextView?
         private var lines: AppUILineNumbers?
-        private nonisolated(unsafe) var editObserver: NSObjectProtocol?
-        private nonisolated(unsafe) var scrollObserver: NSObjectProtocol?
+        private var editObservation: AppUINotificationObservation?
+        private var scrollObservation: AppUINotificationObservation?
 
         init(scrollView: NSScrollView, textView: NSTextView) {
             self.textView = textView
@@ -19,15 +19,11 @@ import Foundation
             // The scroll view moves what is already drawn in the ruler and draws only the strip that came into view, which leaves the numbers
             // in the middle where they were, level with other lines. The whole column is drawn again each time the view scrolls.
             scrollView.contentView.postsBoundsChangedNotifications = true
-            scrollObserver = NotificationCenter.default.addObserver(
-                forName: NSView.boundsDidChangeNotification, object: scrollView.contentView, queue: nil
-            ) { [weak self] _ in
+            scrollObservation = AppUINotificationObservation(name: NSView.boundsDidChangeNotification, object: scrollView.contentView) { [weak self] _ in
                 MainActor.assumeIsolated { self?.needsDisplay = true }
             }
             if let storage = textView.textStorage {
-                editObserver = NotificationCenter.default.addObserver(
-                    forName: NSTextStorage.didProcessEditingNotification, object: storage, queue: .main
-                ) { [weak self] note in
+                editObservation = AppUINotificationObservation(name: NSTextStorage.didProcessEditingNotification, object: storage) { [weak self] note in
                     // Coloring edits attributes only, which moves no line; only a change of the characters does.
                     let changed = (note.object as? NSTextStorage)?.editedMask.contains(.editedCharacters) ?? true
                     MainActor.assumeIsolated {
@@ -42,15 +38,6 @@ import Foundation
         @available(*, unavailable)
         required init(coder _: NSCoder) {
             fatalError("AppUILineNumberRuler is made in code")
-        }
-
-        deinit {
-            if let editObserver {
-                NotificationCenter.default.removeObserver(editObserver)
-            }
-            if let scrollObserver {
-                NotificationCenter.default.removeObserver(scrollObserver)
-            }
         }
 
         override var isOpaque: Bool {
@@ -131,7 +118,7 @@ import Foundation
         private weak var textView: UITextView?
         private var lines: AppUILineNumbers?
         private var scrollObservation: NSKeyValueObservation?
-        private nonisolated(unsafe) var editObserver: NSObjectProtocol?
+        private var editObservation: AppUINotificationObservation?
 
         init(textView: UITextView) {
             self.textView = textView
@@ -142,21 +129,13 @@ import Foundation
                 MainActor.assumeIsolated { self?.follow() }
             }
             // Coloring edits attributes only, which moves no line; only a change of the characters does.
-            editObserver = NotificationCenter.default.addObserver(
-                forName: NSTextStorage.didProcessEditingNotification, object: textView.textStorage, queue: .main
-            ) { [weak self] note in
+            editObservation = AppUINotificationObservation(name: NSTextStorage.didProcessEditingNotification, object: textView.textStorage) { [weak self] note in
                 let changed = (note.object as? NSTextStorage)?.editedMask.contains(.editedCharacters) ?? true
                 MainActor.assumeIsolated {
                     if changed {
                         self?.invalidate()
                     }
                 }
-            }
-        }
-
-        deinit {
-            if let editObserver {
-                NotificationCenter.default.removeObserver(editObserver)
             }
         }
 
