@@ -4,6 +4,51 @@ All notable changes to this rule set are documented here. This project follows S
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-10-18
+
+### Added
+
+- `app-logging.md`: every shipped app has one given recorder, entries that are facts and never the
+  person's content, every intent and state change logged, a Developer menu in Debug and Beta builds
+  only, and a report (log window, snapshot, optional content) made on the person's request and
+  sent only by their choice. Ships a build-checked acceptance list and tests.
+- `crash-and-state-reporting.md`: MetricKit and StateReporting used behind `canImport` and
+  availability, the system's crash reports as a second door, one crash seen through both doors
+  kept once, the call stack never in the log, states joined to the log. Claims about delivery and
+  the return of states are stated at the strength they were shown.
+- `versioning.md` rule 14: the stamp in an Xcode app target is a post-build script phase.
+
+## [2.4.0] - 2026-10-17
+
+### Added
+
+- `versioning.md`: the version is written once, in a `VERSION` file, and read as Semantic
+  Versioning 2.0.0 (a value outside the grammar stops the build); the store's short version is
+  the core only; the build number is the first-parent commit count of the release branch, which
+  grows by one per commit, never restarts, and names one commit; both reach the code through a
+  generated file from a build-tool plugin whose command names its inputs (`VERSION` and the
+  git `HEAD` files); a shallow clone or a missing history is refused, never defaulted to `1`;
+  CI fetches full history; release history is append-only; a store build comes from the release
+  branch with a clean tree; a second upload of one commit needs its own number (the dotted
+  form is stated as not established until one upload orders it). Each rule names its basis as
+  documented, observed, or design. Ships six acceptance commands and the tests, including a
+  regeneration check in a throwaway clone.
+
+## [2.3.0] - 2026-10-14
+
+### Added
+
+- `app-intents.md`: App Intents live in one adapter target; an intent in a package is
+  declared by an `AppIntentsPackage` that each app and extension includes; dependencies are
+  registered, not passed; every string a person sees is a localized resource that names the
+  package bundle and is handed to the system unresolved, so Siri and Shortcuts resolve it in
+  their own language; an interpolated sentence keeps its plural forms (one and other in
+  English and German, one, few and other in Croatian); a sentence is one key, not translated
+  fragments. Each rule names its basis as documented or observed. Ships five acceptance
+  commands, a test recipe for the languages (set `locale` on a copy of the resource, because
+  `String(localized:bundle:locale:)` reads the process's language), and the statement that a
+  unit test does not prove Shortcuts lists the intent in each language.
+
 ## [2.2.0] - 2026-10-14
 
 ### Added

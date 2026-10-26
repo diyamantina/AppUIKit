@@ -35,9 +35,9 @@ red, which is the intended behavior until the repo actually conforms.
 
 Rules corpus last read: 2026-06-30 (pin 97dc70f).
 
-Rules corpus file count: 80.
+Rules corpus file count: 84.
 
-Rules corpus refreshed to rules-swift v2.2.0 (6eecfc5) on 2026-10-14: the files new since the last read are listed and not yet audited against this repository.
+Rules corpus refreshed to rules-swift v2.5.0 (b82d075) on 2026-10-26: the files new since the last read are listed and not yet audited against this repository.
 
 <!--
   Every Markdown or shell file in the pinned rules-swift corpus MUST appear as a
@@ -157,6 +157,10 @@ rule is fully satisfied; it means no public rule source can be silently omitted.
 | `validation-rules.md` | No | Not applicable | No validation layer. |
 | `ui/pre-ui-layer.md` | No | Not applicable | Renderer-layer component package; no model tier to keep display-free (verified by module inspection). |
 | `ui/three-renderers.md` | No | Not applicable | Single UIKit/AppKit shim. |
+| `app-intents.md` | Listed |
+| `app-logging.md` | Listed |
+| `crash-and-state-reporting.md` | Listed |
+| `versioning.md` | Listed |
 
 ## Remediation Record
 
