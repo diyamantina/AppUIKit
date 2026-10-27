@@ -16,6 +16,8 @@ import Foundation
             self.textView = textView
             super.init(scrollView: scrollView, orientation: .verticalRuler)
             clientView = textView
+            // The numbers are a drawing beside the text; the text view says which line the caret is on, so the column is not an element of its own.
+            setAccessibilityElement(false)
             // The scroll view moves what is already drawn in the ruler and draws only the strip that came into view, which leaves the numbers
             // in the middle where they were, level with other lines. The whole column is drawn again each time the view scrolls.
             scrollView.contentView.postsBoundsChangedNotifications = true

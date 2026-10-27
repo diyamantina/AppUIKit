@@ -229,6 +229,14 @@ struct AppUITextViewTextTests {
         #expect(!textView.appuiShowsLineNumbers)
     }
 
+    @Test func `the column of line numbers is not an accessibility element of its own`() {
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            let (textView, _, _) = tallAndWide()
+            textView.appuiShowsLineNumbers = true
+            #expect(textView.enclosingScrollView?.verticalRulerView?.isAccessibilityElement() == false)
+        #endif
+    }
+
     @Test func `the numbers follow an edit of the text`() {
         let (textView, container) = AppUITextView.appuiMakeScrolling()
         container.frame = CGRect(x: 0, y: 0, width: 300, height: 120)
