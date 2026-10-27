@@ -35,9 +35,9 @@ red, which is the intended behavior until the repo actually conforms.
 
 Rules corpus last read: 2026-06-30 (pin 97dc70f).
 
-Rules corpus file count: 84.
+Rules corpus file count: 86.
 
-Rules corpus refreshed to rules-swift v2.5.0 (b82d075) on 2026-10-26: the files new since the last read are listed and not yet audited against this repository.
+Rules corpus refreshed to rules-swift v2.7.0 (25b630c) on 2026-10-27: the files new since the last read are listed and not yet audited against this repository.
 
 <!--
   Every Markdown or shell file in the pinned rules-swift corpus MUST appear as a
@@ -161,6 +161,8 @@ rule is fully satisfied; it means no public rule source can be silently omitted.
 | `app-logging.md` | Listed |
 | `crash-and-state-reporting.md` | Listed |
 | `versioning.md` | Listed |
+| `accessibility.md` | Listed |
+| `help.md` | Listed |
 
 ## Remediation Record
 

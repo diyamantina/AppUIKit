@@ -4,6 +4,41 @@ All notable changes to this rule set are documented here. This project follows S
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-10-27
+
+### Added
+
+- `accessibility.md`: text through text styles (Dynamic Type) with the app's own zoom applied as a shift of it,
+  every control named by what it does and never by its symbol's default name, 28 point tap targets, an
+  alternative for every gesture (named actions, adjustable elements), the name and actions on the element a
+  person reaches and not on a container, contrast as arithmetic (4.5 to 1, Light, Dark, Increase Contrast),
+  announcements, Reduce Motion, layer-drawn UI exposed element by element, and a UI framework's core that
+  describes while each surface must declare that it realizes it. The audit
+  (`performAccessibilityAudit`) runs in UI tests and fails for a finding that is not on a ledger of known
+  findings, each with its reason. Written from the Cupertino corpus (the Human Interface Guidelines pages
+  Accessibility and VoiceOver, Performing accessibility testing, the audit's documentation) and from what the
+  audit measured on an iPad app: 300 findings on five screens, 118 of them hit areas, 69 Dynamic Type, 59
+  contrast. States what is not established: the layout at the largest accessibility size, VoiceOver on a
+  device, and the audit on the Mac.
+
+## [2.6.0] - 2026-10-27
+
+### Added
+
+- `help.md`: an app's help is written once, in one JSON file, and every platform's help is made from it. The
+  Mac carries an Apple Help Book (the two Info.plist keys, the book's structure and indexes, generated and
+  checked against the file) and leaves the Help menu to the system; an iPad and an iPhone have an in-app
+  help sheet in a Help menu of the toolbar and in the menu bar of an iPad, and the version in the Settings
+  app through a Settings bundle; tips (TipKit) point at the first thing to do and go when it is done. Each
+  platform is told in its own words. Ships a build-checked acceptance list and tests; what was observed on a
+  built app is stated as observed, and the Help Book format, which the Cupertino corpus does not hold, is
+  marked as such.
+
+### Changed
+
+- `versioning.md` rule 14: the stamp phase names the built `Info.plist` as an input file, so that it runs
+  after the system writes the plist; observed on a clean build, where the stamp was lost without it.
+
 ## [2.5.0] - 2026-10-18
 
 ### Added

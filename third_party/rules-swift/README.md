@@ -110,6 +110,16 @@ domain that enforces them.
 - [crash-and-state-reporting.md](crash-and-state-reporting.md) - MANDATORY with the log:
   MetricKit and StateReporting behind `canImport` and availability, the system's own crash
   reports as a second door, one crash seen twice is one, states joined to the log.
+- [help.md](help.md) - MANDATORY for every app that ships to people: one file of words,
+  a Help Book on the Mac that the system makes the Help menu from, an in-app help sheet and
+  a page in the Settings app on an iPad and an iPhone, tips (TipKit) at the first thing to
+  do, each platform in its own words, and About with the version the build stamped.
+- [accessibility.md](accessibility.md) - MANDATORY for every app and UI framework: text through
+  text styles with the app's zoom as a shift of Dynamic Type, every control named by what it
+  does, 28 point targets, every gesture with an alternative action or adjustable element,
+  contrast as arithmetic, Reduce Motion, announcements, layer-drawn UI exposed as elements, a
+  core that describes and surfaces that must declare they realize it, and an audit that fails
+  the build against a ledger of known findings.
 - [testing.md](testing.md) - Swift Testing, `@Test` / `#expect`, test isolation.
 - [formatting-and-linting.md](formatting-and-linting.md) - SwiftFormat and
   SwiftLint, enforced by a pre-commit hook and again in CI.

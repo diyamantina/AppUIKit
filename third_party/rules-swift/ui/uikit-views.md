@@ -126,6 +126,8 @@ private func apply(_ dirty: Set<SurfaceArea>) {
 
 ### Accessibility
 
+The full rule is [accessibility.md](../accessibility.md): text styles and Dynamic Type, names that say what a control does, 28 point targets, an alternative for every gesture, contrast, Reduce Motion, and the audit that fails the build. What follows is the minimum for one element.
+
 ```swift
 reloadButton.accessibilityLabel = "Reload tiles"
 reloadButton.accessibilityHint = "Fetches the latest tiles"
