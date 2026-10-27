@@ -53,4 +53,17 @@ public extension AppUIView {
             }
         #endif
     }
+
+    /// Have VoiceOver speak `text` without moving focus, uniformly across AppKit and UIKit: the way to say that a layout changed.
+    func postAXAnnouncement(_ text: String) {
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            NSAccessibility.post(
+                element: self,
+                notification: .announcementRequested,
+                userInfo: [.announcement: text, .priority: NSAccessibilityPriorityLevel.high.rawValue]
+            )
+        #elseif canImport(UIKit)
+            UIAccessibility.post(notification: .announcement, argument: text)
+        #endif
+    }
 }
