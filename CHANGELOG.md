@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Reserved regions and the hinge, the same on AppKit and UIKit (through the `Forwards` package, which AppUIKit now depends on): `AppUIView.appuiReservedRegions(kind:includeInactive:)` (the fold of a foldable iPhone and the cameras, from iOS 27.1; empty before it and on AppKit, which has none), `AppUIHingeObserver` (never calls its handler where there is no hinge), and `AppUIReservedRegion`, `AppUIRegionKind` and `AppUIHinge` for their values.
 - The column of line numbers on AppKit is no longer an accessibility element: the text view says which line the caret is on, and the audit reported the ruler as an element with no description.
 - `AppUIKit.reducesMotion`: the system's Reduce Motion setting, read the same way on AppKit and UIKit.
 - `AppUIAccessibilityAction` and `AppUIView.setAXValue(_:)`, `setAXHint(_:)`, `setAXActions(_:)`, `postAXAnnouncement(_:)`: the accessibility value, hint and custom actions (the non-gesture alternatives to a drag or a swipe) set the same way on AppKit and UIKit, with `setAXLabel` that was already there. Held by reading back what was set and by running each action's handler.

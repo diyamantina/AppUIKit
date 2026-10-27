@@ -15,9 +15,17 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-docc-plugin", from: "1.4.3"),
+        // The newer Apple UI APIs with a fallback below the OS that has them (reserved regions, the hinge): the cross-framework layer delegates to it.
+        .package(url: "https://codeberg.org/Mihaela/Forwards.git", from: "0.1.0"),
     ],
     targets: [
-        .target(name: "AppUIKit"),
+        .target(
+            name: "AppUIKit",
+            dependencies: [
+                .product(name: "ForwardsCore", package: "Forwards"),
+                .product(name: "ForwardsUIKit", package: "Forwards", condition: .when(platforms: [.iOS])),
+            ]
+        ),
         .target(name: "AppUITesting"),
         .testTarget(name: "AppUIKitTests", dependencies: ["AppUIKit", "AppUITesting"]),
         .testTarget(name: "AppUITestingTests", dependencies: ["AppUITesting"]),
