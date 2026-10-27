@@ -37,7 +37,7 @@ Rules corpus last read: 2026-06-30 (pin 97dc70f).
 
 Rules corpus file count: 86.
 
-Rules corpus refreshed to rules-swift v2.7.0 (25b630c) on 2026-10-27: the files new since the last read are listed and not yet audited against this repository.
+Rules corpus refreshed to rules-swift v2.8.0 (d6b207d) on 2026-10-27: the files new since the last read are listed and not yet audited against this repository.
 
 <!--
   Every Markdown or shell file in the pinned rules-swift corpus MUST appear as a

@@ -4,6 +4,12 @@ All notable changes to this rule set are documented here. This project follows S
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-10-28
+
+### Changed
+
+- `accessibility.md`: the Mac is audited too, and what it found is in the rules (a divider with no role is a slider on the Mac and an adjustable action on iOS; a list, an outline and a placeholder-only text field are named; a ruler beside text is hidden). A finding is checked against the pixels of the picture before it is listed, and one the pixels contradict is recorded as a false positive with its measured ratio. The ledger may name element kinds, a finding with no element is let pass only by an entry with no label, and the macOS SDK's missing audit types are named by their raw values. Rule 14 now has a built answer (pages instead of columns at accessibility sizes, decided by a tested pure function) and says for which screens it was looked at.
+
 ## [2.7.0] - 2026-10-27
 
 ### Added
