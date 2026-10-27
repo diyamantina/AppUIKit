@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `appuiScrollToVisible` on UIKit scrolls again when the layout it makes above the view moves the offset away from the one it set, so a request for lines at the top of a long text, made while the view is far down, ends with those lines in view; it was left at the bottom.
+
 ### Added
 
 - Indent guides: the vertical lines through the indentation of source text, one for each level a line is nested in, each level in a colour of its own (six that repeat, for a light and a dark background), so that the shape of the nesting can be followed down the screen. `AppUITextView.appuiIndentGuideUnit` (a view over the text that takes no clicks, on both platforms) and `AppUIRowView.indentGuideUnit` draw them for the lines that can be seen only; `AppUIIndentGuides.detectUnit` finds the width of a level from the text. A guide is a rectangle one device pixel wide on the pixel grid, filled and not stroked, so it is sharp at any scale and the guides of rows that touch are one line; a blank line is drawn as deep as the lesser of the lines with text above and below it; none runs through the text. Held by pixels on the Mac (rows and text view) and on the iPad simulator, and by the arithmetic of the pixel grid at scales 1, 2 and 3.

@@ -186,6 +186,16 @@ struct AppUITextViewTextTests {
         #expect(abs(place.range.midY - place.visible.midY) < place.visible.height / 4, "centered: \(place.range) in \(place.visible)")
     }
 
+    @Test func `centering on the first lines after a visit far down puts them in view, though the lines between were never laid out`() {
+        let (textView, _, text) = tallAndWide()
+        let far = (text as NSString).range(of: "line 190")
+        textView.appuiScrollToVisible(far, centered: true)
+        let first = AppUIRange(location: 0, length: 79)
+        textView.appuiScrollToVisible(first, centered: true)
+        let place = place(of: first, in: textView)
+        #expect(place.visible.minY <= place.range.minY && place.range.minY <= place.visible.maxY, "the first lines are in view: \(place.range) in \(place.visible)")
+    }
+
     @Test func `code keeps off the edge of the view and is not offered the system's writing tools`() {
         let (textView, _) = AppUITextView.appuiMakeScrolling()
         textView.appuiConfigureForCode(font: AppUIKit.Fonts.monospaced(ofSize: 13))

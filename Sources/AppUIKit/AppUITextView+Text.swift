@@ -54,33 +54,40 @@ public extension AppUITextView {
     /// content as wide as itself, so only the row can be scrolled to, not a column beyond the edge.
     func appuiScrollToVisible(_ range: AppUIRange, centered: Bool = false) {
         // The layout is lazy and does not lay out the lines before the range, so where the range is, before the view around it is laid out, is an estimate. The
-        // view is scrolled to the estimate, the lines now in view are laid out, and where the range is is measured again, until it stops moving.
+        // view is scrolled to the estimate, the lines now in view are laid out, and where the range is is measured again, until it stops moving. On UIKit the view
+        // also keeps the text that is in view where it is when the layout above it is made real, which can carry the offset away from the one just set; the scroll
+        // is then made again, over the layout that is there now, until the view is where it was sent.
         var previous: CGFloat?
         for _ in 0 ..< 8 {
             let rect = appuiRect(of: range)
-            appuiScroll(toRect: rect, centered: centered)
+            let origin = appuiScroll(toRect: rect, centered: centered)
             appuiLayOutVisibleLines()
+            let arrived = origin.map { abs(appuiVisibleRect.origin.y - $0.y) < 1 } ?? true
             let settled = abs(appuiRect(of: range).minY - rect.minY) < 1
-            if settled || previous == rect.minY {
+            if arrived, settled || previous == rect.minY {
                 return
             }
             previous = rect.minY
         }
     }
 
-    /// Scrolls to `rect` once, as `appuiScrollToVisible` does.
-    private func appuiScroll(toRect rect: CGRect, centered: Bool) {
+    /// Scrolls to `rect` once, as `appuiScrollToVisible` does, and says where the view was sent on UIKit.
+    @discardableResult
+    private func appuiScroll(toRect rect: CGRect, centered: Bool) -> CGPoint? {
         #if canImport(AppKit) && !targetEnvironment(macCatalyst)
             guard let scroll = enclosingScrollView else {
                 scrollToVisible(rect)
-                return
+                return nil
             }
             let origin = Self.scrolledOrigin(to: rect, visible: scroll.documentVisibleRect, contentHeight: frame.height, centered: centered)
             scroll.contentView.scroll(to: origin)
             scroll.reflectScrolledClipView(scroll.contentView)
+            return nil
         #elseif canImport(UIKit)
             let visible = CGRect(origin: contentOffset, size: bounds.size)
-            setContentOffset(Self.scrolledOrigin(to: rect, visible: visible, contentHeight: contentSize.height, centered: centered), animated: false)
+            let origin = Self.scrolledOrigin(to: rect, visible: visible, contentHeight: contentSize.height, centered: centered)
+            setContentOffset(origin, animated: false)
+            return origin
         #endif
     }
 
