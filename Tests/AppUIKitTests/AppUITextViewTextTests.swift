@@ -229,11 +229,12 @@ struct AppUITextViewTextTests {
         #expect(!textView.appuiShowsLineNumbers)
     }
 
-    @Test func `the column of line numbers is not an accessibility element of its own`() {
+    @Test func `the column of line numbers has a description, and the text view stays in the tree`() {
         #if canImport(AppKit) && !targetEnvironment(macCatalyst)
             let (textView, _, _) = tallAndWide()
             textView.appuiShowsLineNumbers = true
-            #expect(textView.enclosingScrollView?.verticalRulerView?.isAccessibilityElement() == false)
+            #expect(textView.enclosingScrollView?.verticalRulerView?.accessibilityLabel() == "Line numbers")
+            #expect(textView.isAccessibilityElement())
         #endif
     }
 
