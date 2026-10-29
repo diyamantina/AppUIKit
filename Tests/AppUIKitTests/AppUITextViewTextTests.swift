@@ -235,6 +235,13 @@ struct AppUITextViewTextTests {
             textView.appuiShowsLineNumbers = true
             #expect(textView.enclosingScrollView?.verticalRulerView?.accessibilityLabel() == "Line numbers")
             #expect(textView.isAccessibilityElement())
+        #elseif canImport(UIKit)
+            let (textView, container) = AppUITextView.appuiMakeScrolling()
+            container.frame = CGRect(x: 0, y: 0, width: 300, height: 120)
+            textView.appuiShowsLineNumbers = true
+            let gutter = textView.subviews.first { $0 is AppUILineNumberGutter }
+            #expect(gutter?.isAccessibilityElement == true)
+            #expect(gutter?.accessibilityLabel == "Line numbers")
         #endif
     }
 
