@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- The column of line numbers on UIKit is one accessibility element with the description "Line numbers": the audit took each number it draws for text without a representation (ten findings on a screen of the iPad app).
 - `appuiScrollToVisible` on UIKit scrolls again when the layout it makes above the view moves the offset away from the one it set, so a request for lines at the top of a long text, made while the view is far down, ends with those lines in view; it was left at the bottom.
 
 ### Added

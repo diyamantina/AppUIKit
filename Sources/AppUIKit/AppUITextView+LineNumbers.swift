@@ -128,10 +128,6 @@ import Foundation
             super.init(frame: .zero)
             isUserInteractionEnabled = false
             backgroundColor = textView.backgroundColor
-            // The numbers are drawn, not text of views, so the audit takes each for text that has no representation: the column is one element with a
-            // description, as the ruler is on AppKit.
-            isAccessibilityElement = true
-            accessibilityLabel = "Line numbers"
             scrollObservation = textView.observe(\.contentOffset) { [weak self] _, _ in
                 MainActor.assumeIsolated { self?.follow() }
             }
