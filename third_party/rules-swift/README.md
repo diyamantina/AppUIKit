@@ -120,6 +120,12 @@ domain that enforces them.
   contrast as arithmetic, Reduce Motion, announcements, layer-drawn UI exposed as elements, a
   core that describes and surfaces that must declare they realize it, and an audit that fails
   the build against a ledger of known findings.
+- [iphone-duo.md](iphone-duo.md) - MANDATORY for every iPhone app and UI framework: the foldable
+  iPhone has two displays and many poses and resizes the app while it runs; layout from size
+  classes and the space, never the screen, idiom or orientation; the size read on every change;
+  state held above anything a size class swaps; reserved regions, arrangement views and the
+  hinge (iOS 27.1) in their places; the system's vertical bars; asymmetric safe areas; scenes;
+  a test across the changes between poses; and a stated list of what Apple has not documented.
 - [testing.md](testing.md) - Swift Testing, `@Test` / `#expect`, test isolation.
 - [formatting-and-linting.md](formatting-and-linting.md) - SwiftFormat and
   SwiftLint, enforced by a pre-commit hook and again in CI.
@@ -194,6 +200,7 @@ The UI rules live under [`ui/`](ui/). Any code with UI keeps the renderer thin o
 - [ui/native-per-platform.md](ui/native-per-platform.md) - MANDATORY: optimize for the user via genuinely native UI per platform; per-device divergence is welcome; never trade the native experience for developer or test convenience or a write-once lowest-common-denominator. Governs and is superior to three-renderers.
 - [ui/three-renderers.md](ui/three-renderers.md) - build the same UI in all three Apple SDKs (SwiftUI, UIKit, AppKit) over the one model: the architecture's payoff and a comparison instrument for which framework behaves best in a scenario. Subordinate to native-per-platform: applies only where the same UI is also the best native UI.
 - [ui/swiftui-views.md](ui/swiftui-views.md) - the SwiftUI renderer: view architecture and identity.
+- [ui/pane-layout.md](ui/pane-layout.md) - MANDATORY for apps that lay a document out in panes, columns or pages: the split sizes a pane and the content does not (contain and clip), optional parts decided by a measurement, a header that fits the narrowest pane, columns by the room the parts need (not a fixed width), a saved layout for each way the device is held, the whole area for the document, a platform view brought up to date by its inputs and keeping its controller, and a picture of each arrangement.
 - [ui/appuikit.md](ui/appuikit.md) - MANDATORY for AppKit and UIKit code: import `AppUIKit` and name its `AppUI*` types, never an `NS` or `UI` type or a direct SDK import; add a missing alias to the layer first.
 - [ui/uikit-views.md](ui/uikit-views.md) - the UIKit renderer: `UIViewController`/`UIView` adapters, diffable data sources, re-pull on the change signal.
 - [ui/appkit-views.md](ui/appkit-views.md) - the AppKit renderer: `NSViewController`/`NSView` adapters, `withObservationTracking`, programmatic menus.
@@ -202,7 +209,7 @@ The UI rules live under [`ui/`](ui/). Any code with UI keeps the renderer thin o
 - [ui/colors.md](ui/colors.md) - the color system.
 - [ui/fonts.md](ui/fonts.md) - font registration in SwiftPM targets.
 - [ui/pom.md](ui/pom.md) - Page Object Model for UI tests: screens behind page objects, identifiers from one shared source.
-- [ui/flowspec.md](ui/flowspec.md) - declarative UI scenarios driven by [FlowSpec](https://github.com/mihaelamj/FlowSpec): one flow, many renderers, replayed headless and on-device.
+- [ui/flowspec.md](ui/flowspec.md) - declarative UI scenarios driven by [FlowSpec](https://codeberg.org/Mihaela/FlowSpec): one flow, many renderers, replayed headless and on-device.
 
 ## License
 

@@ -1,13 +1,13 @@
 # FlowSpec (declarative UI scenarios)
 
-**Status: RECOMMENDED, and the expected form when a UI ships in more than one renderer.** A UI flow is described once, as a declarative scenario, and replayed against every UI implementation. The scenario is the single source of truth for what a flow does; the implementations cannot drift in their behavior because they all run the same steps. The engine is the public package [FlowSpec](https://github.com/mihaelamj/FlowSpec).
+**Status: RECOMMENDED, and the expected form when a UI ships in more than one renderer.** A UI flow is described once, as a declarative scenario, and replayed against every UI implementation. The scenario is the single source of truth for what a flow does; the implementations cannot drift in their behavior because they all run the same steps. The engine is the public package [FlowSpec](https://codeberg.org/Mihaela/FlowSpec).
 
 ## The model
 
 - A **scenario** is a JSON file: `{ id, title, actor?, preconditions[], tags[], steps[] }`.
 - A **step** is `{ verb, target, arg? }`. Its key is `"verb:target"`.
-- A **verb** comes from a small closed vocabulary (`open`, `tap`, `type`, `swipe`, `wait`, `assert`, `request`). The vocabulary is deliberately tiny so a scenario reads like a specification, not a script; adding a verb is a coordinated change across the schema, the enum, and every registry.
-- A **step registry** is the seam: one per UI, a `@MainActor` type with a single `execute(_ step: Step) throws` that turns a step into a real action against that UI. The registry throws on an unknown `verb:target`, so a scenario can never reference machinery that is not wired up. FlowSpec ships a default identifier-driven XCUITest registry in its `FlowSpecXCUI` module (see `pom.md` for the page-object pattern it drives); the headless registry that drives the model layer you write yourself. The core `FlowSpec` engine stays `Foundation`-only.
+- A **verb** comes from a small closed vocabulary (`open`, `tap`, `type`, `swipe`, `wait`, `assert`, `request`, `ambient`, `rotate`). `ambient` injects an automatic, no-user event (a timer, a notification, an agent's progress) at its true position in the ordered run; `rotate` turns the device to `portrait` or `landscape`. The vocabulary is deliberately tiny so a scenario reads like a specification, not a script; adding a verb is a coordinated change across the schema, the enum, and every registry.
+- A **step registry** is the seam: one per UI, a `@MainActor` type with a single `execute(_ step: Step) throws` that turns a step into a real action against that UI. The registry throws on an unknown `verb:target`, so a scenario can never reference machinery that is not wired up. FlowSpec ships a default identifier-driven XCUITest registry in its `FlowSpecXCUI` module (see `pom.md` for the page-object pattern it drives); the headless registry that drives the model layer you write yourself. When the thing a step drives is asynchronous (a pre-UI engine whose one door is `async`), the registry is an `AsyncStepRegistry` run by `AsyncScenarioRunner`, so the replay awaits the engine's real concurrency instead of reducing it to a blocking call. The core `FlowSpec` engine stays `Foundation`-only.
 - The **runner** walks a scenario's steps in order, stops on the first failure, and reports the scenario id and step index, so a log points at the exact step.
 
 ## Why and when
@@ -22,6 +22,7 @@
 - Drive the on-device registry through page objects (`pom.md`), not raw queries.
 - Replay the same scenario corpus headless against the model layer; do not fork a separate headless test set.
 - Let the runner stop at the first failure and report the scenario id and step index.
+- Load a hand-edited scenario with `ScenarioLoader.loadValidated`, which also rejects an inconsistent one (no steps, a `swipe` with no direction, a `wait` with a non-positive timeout, a `rotate` to no orientation) with every finding named by its rule code; `load` only decodes.
 - Throw `unknownStep` on an unwired `verb:target` so a scenario cannot reference missing machinery.
 
 ## DON'T

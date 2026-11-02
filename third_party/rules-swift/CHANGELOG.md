@@ -4,6 +4,54 @@ All notable changes to this rule set are documented here. This project follows S
 
 ## [Unreleased]
 
+## [2.14.0] - 2026-11-02
+
+### Changed
+
+- `concurrency.md`: where a synchronous API must guard shared state (a protocol requirement, a synchronous engine), the rule now names `Synchronization.Mutex` (SE-0433) beside `actor`: it is `Sendable` without `@unchecked`, and the state is reachable only inside `withLock`. The gate's escape-hatch and `NSLock` checks are unchanged.
+
+## [2.13.0] - 2026-10-31
+
+### Changed
+
+- `ui/flowspec.md`: the verb list now includes `ambient` and `rotate`, the engine is described with `AsyncStepRegistry` and `AsyncScenarioRunner` for an async pre-UI door, and a new DO says to load hand-edited scenarios with `ScenarioLoader.loadValidated`.
+- `ui/flowspec.md`, `ui/pom.md`, `README.md`: the FlowSpec link points at its Codeberg home, `https://codeberg.org/Mihaela/FlowSpec`, instead of GitHub, where it no longer lives.
+
+## [2.12.0] - 2026-10-28
+
+### Added
+
+- `ui/pane-layout.md`: a section on one set of panes on a Mac, an iPad and an iPhone with SuperSplit, ten rules: one view per pane role with many containers (a phone gets the same views as pages, not a split); the arrangement is a value that names the saved layout; a pane's share and its least size are different limits and the least wins; the Mac hides the problem by being wide, so test every pane at its least width; the divider is the edge of a pane and its frame in the accessibility tree is what a test asserts against; the card's clip loses what does not fit, so pair it with a test and a picture; maximize is the way to give one pane the whole area; a platform view needs an owner that lives as long as the pane; chrome as glass is a background; and three levels of test (the pure layout, the real window's frames, a picture of each arrangement).
+
+## [2.11.0] - 2026-10-28
+
+### Added
+
+- `ui/pane-layout.md`: eight rules from an iPad and an iPhone Duo with a real editor, each a defect that shipped: the split sizes a pane and the content does not; an optional part is decided by a measurement (a tip in `ViewThatFits` widened a 240 point pane to 296); a header fits the narrowest pane; columns are decided by the room the parts need and not by a fixed 1000 points (a 13 inch iPad upright is 1032); a layout is saved for each way the device is held; the whole area for the document; a platform view is updated by its inputs and keeps its controller; and a picture of each arrangement is a deliverable. With two acceptance commands.
+- `iphone-duo.md`: a section of what was observed on the simulator, kept apart from what Apple documents: a vertical toolbar over a vertical tab bar on the closed display, a fold that rebuilt the navigation and lost the screen, and the tools that work (Device Hub only; screenshots are black unless closed).
+
+## [2.10.0] - 2026-10-28
+
+### Changed
+
+- `iphone-duo.md`: availability is now stated from the SDK's own Swift interface and headers, with two facts the Apple pages do not carry (the macOS SDK of Xcode 27.1 is 27.0 and lacks the 27.1 symbols; members of a type listed for a platform can be unavailable there, as `horizontalOnly`, `verticalPreferred`, `ToolbarOverflowMenu` and the compression behaviors are on macOS), the per-API versions of the bar APIs are corrected (`visibilityPriority` iOS 27.0 and macOS 26.1, `ToolbarOverflowMenu` iOS 27.0), and a new rule says the newer APIs are reached through one layer that checks the SDK and the OS separately and gives each a fallback (the `Forwards` package).
+
+## [2.9.0] - 2026-10-28
+
+### Added
+
+- `iphone-duo.md`: the foldable iPhone, from Apple's own pages (the Human Interface Guidelines page, the
+  documentation of Preparing your app for iPhone Duo, ArrangementView and reserved regions, five Tech Talks
+  and the WWDC26 UIKit session; none is in the Cupertino corpus yet). The app is resized by a fold while it
+  runs, so: the size is read on every change from the view and never from the screen or the launch; layout
+  is decided by size classes and the space, not by idiom, orientation or `UIScreen.main`; state lives above
+  anything a size class swaps; reserved regions, arrangement views and the hinge are iOS 27.1 and used in
+  their places (regions and arrangements for layout, the hinge for effects); the system's bars carry the
+  controls; safe areas are not symmetric; a second window is a request that can fail; and every pose and
+  every change between poses is tested. States what Apple has not documented (the transition, state across
+  a fold, scene behavior on a fold, sizes), and that the claim of support is made only after the transition
+  test has been run.
+
 ## [2.8.0] - 2026-10-28
 
 ### Changed

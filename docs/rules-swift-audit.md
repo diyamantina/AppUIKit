@@ -35,9 +35,9 @@ red, which is the intended behavior until the repo actually conforms.
 
 Rules corpus last read: 2026-06-30 (pin 97dc70f).
 
-Rules corpus file count: 86.
+Rules corpus file count: 88.
 
-Rules corpus refreshed to rules-swift v2.8.0 (d6b207d) on 2026-10-27: the files new since the last read are listed and not yet audited against this repository.
+Rules corpus refreshed to rules-swift v2.14.0 (e624c8c) on 2026-11-02. New since v2.8.0: `iphone-duo.md` and `ui/pane-layout.md`. The acceptance commands of both rules were run on `Sources` (88 Swift files searched) on 2026-11-02 and printed one line: `Sources/AppUITesting/XCTestCase+Waiting.swift:21`, `XCUIScreen.main.screenshot()` in an XCTest helper. That is XCTest's screen, not `UIScreen.main`; the rule's pattern has no word boundary, so the line matches by name only and is not a violation. Every other command printed nothing. The rules' app-level tests (every pose, the fold on the simulator, the pane UI test) belong to an app and are not run and not claimed here. Changed since v2.8.0: `CHANGELOG.md`, `README.md`, `concurrency.md`, `ui/flowspec.md`, `ui/pom.md` (see the canon's CHANGELOG); none adds or alters an acceptance command this repository runs. The files new since the last full read are listed and not yet audited against this repository.
 
 <!--
   Every Markdown or shell file in the pinned rules-swift corpus MUST appear as a
@@ -163,6 +163,8 @@ rule is fully satisfied; it means no public rule source can be silently omitted.
 | `versioning.md` | Listed |
 | `accessibility.md` | Listed |
 | `help.md` | Listed |
+| `iphone-duo.md` | Listed (acceptance commands run on Sources; one name-only match, `XCUIScreen.main` in a test helper; app-level tests not run, no app here) |
+| `ui/pane-layout.md` | Listed (acceptance commands run on Sources; app-level tests not run, no app here) |
 
 ## Remediation Record
 

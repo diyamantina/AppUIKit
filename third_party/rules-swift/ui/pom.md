@@ -6,7 +6,7 @@
 
 1. **A base page owns the mechanics.** A single shared base class is constructed with the `XCUIApplication` injected (`init(app:)`) and holds every reusable interaction: waiting for an element to appear or disappear, tapping, asserting existence, scrolling to an element, taking a screenshot. Every method threads `file: StaticString = #filePath, line: UInt = #line` so a failure blames the test's call site, not the base page. Methods are `open` so a page can override a wait without re-implementing it.
 
-   A default identifier-driven XCUITest registry ships in `FlowSpecXCUI`, part of the [FlowSpec](https://github.com/mihaelamj/FlowSpec) package, so an app whose views set accessibility identifiers can run scenarios with no custom registry code; the page objects themselves are per-app. See `flowspec.md`.
+   A default identifier-driven XCUITest registry ships in `FlowSpecXCUI`, part of the [FlowSpec](https://codeberg.org/Mihaela/FlowSpec) package, so an app whose views set accessibility identifiers can run scenarios with no custom registry code; the page objects themselves are per-app. See `flowspec.md`.
 
 2. **One page object per screen.** A concrete page subclasses the base class, file name equals page name. Its locators are computed `XCUIElement` properties that query the app by a shared identifier constant and the typed element kind (`app.buttons[ID.Catalog.search]`, `app.staticTexts[ID.Item.title]`), never a raw string. Its methods split into verifications (return `Self`) and actions (return the next page).
 

@@ -33,7 +33,7 @@ Strict concurrency is achievable without region-based isolation, complex task hi
   // URLSession is thread-safe; this wrapper is stateless.
   struct ContentFetcher: @unchecked Sendable { ... }
   ```
-- Never combine `@unchecked Sendable` with hand-rolled `NSLock` / `DispatchQueue` in new code. If you need locks, use `actor`.
+- Never combine `@unchecked Sendable` with hand-rolled `NSLock` / `DispatchQueue` in new code. If you need locks, use `actor`. Where a synchronous API must guard shared state (a protocol requirement, a synchronous engine that cannot be `async`), use `Synchronization.Mutex` (SE-0433): `Mutex<State>` is `Sendable` without `@unchecked`, the state is reachable only inside `withLock`, and the critical section stays visible. Keep the work inside `withLock` short and never call back into the same lock from it.
 
 **Why (SE-0302, Swift 5.5).** `Sendable` was introduced because passing arbitrary references across isolation boundaries makes data-race safety impossible to verify locally. The protocol turns *"is this safe to send across a concurrency domain?"* into a property the compiler can check by induction on stored properties. Implicit conformance for value types is the design intent: most structs should be `Sendable` without ceremony, because most value types compose `Sendable` parts. Explicit annotation on public types is for API clarity, not for the compiler.
 
@@ -204,7 +204,7 @@ When to **not** use `AsyncStream`: single-callback progress reporting. A `@Senda
 Avoid in new Swift 6 code:
 
 - `DispatchQueue.main.async { ... }` → use `Task { @MainActor in ... }` or `await MainActor.run { ... }`.
-- `NSLock` / `pthread_mutex` + `@unchecked Sendable` → use `actor`.
+- `NSLock` / `pthread_mutex` + `@unchecked Sendable` → use `actor`; where the API must stay synchronous, use `Synchronization.Mutex`.
 - `withCheckedContinuation` / `withUnsafeContinuation` → only when wrapping legacy callback APIs.
 - `@MainActor` smeared across non-UI types to silence warnings → fix the design.
 - `nonisolated(unsafe)` to bypass a warning without thinking about the race → fix the design.
