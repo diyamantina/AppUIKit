@@ -40,3 +40,38 @@ struct AppUIContextMenuTests {
         #endif
     }
 }
+
+/// The menu of a button: asked for each time it opens, and a flag that says whether a plain press opens it (the tool flyouts of SlayerDraw). A press that opens the menu is not
+/// tested through a
+/// modal pop-up; the flag and the menu are what the owner reads.
+@MainActor
+@Suite("AppUIKit button menu")
+struct AppUIButtonMenuTests {
+    @Test func `a button menu is built when it opens, and the flag says whether a press opens it`() throws {
+        let button = AppUIButton()
+        var titles = ["One", "Two"]
+        button.appuiSetMenu(opensOnPress: true) { [titles.map { AppUIContextEntry(title: $0) {} }] }
+        #expect(button.appuiMenuOpensOnPress)
+        button.appuiMenuOpensOnPress = false
+        #expect(!button.appuiMenuOpensOnPress)
+        button.appuiSetMenu { [titles.map { AppUIContextEntry(title: $0) {} }] }
+        #expect(!button.appuiMenuOpensOnPress, "the default is a menu from the secondary click or the long press only")
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+            let menu = try #require(button.menu)
+            let delegate = try #require(menu.delegate)
+            delegate.menuNeedsUpdate?(menu)
+            #expect(menu.items.map(\.title) == ["One", "Two"])
+            titles = ["Three"]
+            delegate.menuNeedsUpdate?(menu)
+            #expect(menu.items.map(\.title) == ["Three"], "asked for again each time")
+        #else
+            #expect(button.menu != nil)
+        #endif
+    }
+
+    @Test func `the image colour of a button reads back`() {
+        let button = AppUIButton()
+        button.appuiContentTintColor = .red
+        #expect(button.appuiContentTintColor == .red)
+    }
+}
