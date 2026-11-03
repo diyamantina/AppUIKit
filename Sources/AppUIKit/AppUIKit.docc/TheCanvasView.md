@@ -45,6 +45,16 @@ touch, so that one is not given twice. A touch that begins is alone, and only a 
 sample is a guess for the next frame: draw it, never commit it. The rule lives once, in a function both platforms call, and is held by
 tests that write the touches as plain values, because a `UITouch` cannot be made in a test.
 
+## Navigation and modifier keys
+
+``AppUICanvas/navigation`` is a second ordered stream with one consumer, of ``AppUICanvas/Navigation`` steps in view points: a scroll (a
+trackpad in points or a wheel in lines, with `zooms` true while Command or Option is held), a pinch step with its factor, and a smart zoom.
+The view does no arithmetic with them; the host decides what a pan or a zoom is. On UIKit the first contact draws, and a second one cancels
+it and the gesture becomes a pinch or a two-finger pan (``AppUICanvas/ContactTracker`` holds the rule on plain values).
+
+A change of the modifier keys is a sample with the ``AppUICanvas/Phase/modifiersChanged`` phase, at the pointer's last place, in the same
+stream as the pointer, so Shift pressed in the middle of a drag arrives in its order. It needs the canvas to be the first responder.
+
 ## Where things are
 
 ``AppUICanvas/hit(at:)`` asks the surface's marks first, because a handle beats the object under it, then its items, topmost first. The
@@ -71,16 +81,17 @@ CAControls, which has a gate of its own for the same rule.
 
 ## What is not here
 
-- Zoom and pan (the scroll view as the root of the view), so the viewport is the host's to set.
+- Zoom and pan arithmetic: the viewport is the host's to set. The view only reports the steps (see below).
 - Accessibility elements for the items.
 - A text field for editing text on the canvas.
-- A scroll, magnify or right-button event. A secondary button goes to the next responder.
+- A right-button event. A secondary button goes to the next responder.
 
 ## Limits of what the platforms say
 
 - **AppKit and UIKit do not tell a mouse from a trackpad.** A pointer is ``AppUICanvas/Device/mouse``. ``AppUICanvas/Device/trackpad`` is
   what UIKit reports for an indirect touch that is not a pointer.
-- **Pen force and tilt.** On AppKit the force of a tablet point is read; its tilt is not, because no tablet was at hand to check the
+- **Pen force and tilt.** The force is a fraction from 0 to 1 on both platforms (on UIKit the touch's force over its maximum possible
+  force). On AppKit the tablet's tilt components are given as they come (`Sample/tilt`), because no tablet was at hand to check the
   direction convention against. On UIKit the force, altitude and azimuth of the Pencil are read. A finger and a mouse have no force here.
 - **Hover on UIKit** is the pointer's, as a mouse; Pencil hover is not told apart from it.
 - **Not run on a device.** The UIKit path is compiled and its tests run on the simulator; no real finger, Pencil or pointer has driven it.
