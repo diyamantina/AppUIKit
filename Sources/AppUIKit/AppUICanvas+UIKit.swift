@@ -198,6 +198,11 @@
         }
     }
 
+    extension AppUICanvas {
+        /// A touch screen has no pointer shape.
+        func platformCursorChanged() {}
+    }
+
     extension AppUICanvas: AppUIGestureRecognizerDelegate {
         /// The pinch and the two-finger pan recognize together, so a pinch that moves pans as it zooms; the hover recognizer stands alone.
         public func gestureRecognizer(_ gestureRecognizer: AppUIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: AppUIGestureRecognizer) -> Bool {

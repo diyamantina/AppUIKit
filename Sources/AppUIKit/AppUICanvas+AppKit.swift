@@ -16,6 +16,19 @@
             // Hover needs a tracking area; it is made in updateTrackingAreas, which AppKit calls when the area is first needed.
         }
 
+        internal func platformCursorChanged() {
+            window?.invalidateCursorRects(for: self)
+        }
+
+        override func resetCursorRects() {
+            super.resetCursorRects()
+            switch cursor {
+            case .arrow: break
+            case .openHand: addCursorRect(bounds, cursor: .openHand)
+            case .closedHand: addCursorRect(bounds, cursor: .closedHand)
+            }
+        }
+
         internal func platformDisplayScale() -> CGFloat {
             window?.backingScaleFactor ?? 1
         }

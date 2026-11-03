@@ -26,6 +26,15 @@ public final class AppUICanvas: AppUITopLeftView {
     /// The display. The host calls `apply(items:overlay:viewport:)` on it; the view sizes it, sets its display scale and hit-tests it.
     public let surface = CACanvas.Surface()
 
+    /// The pointer shape over the canvas. The host sets it from what is under the pointer; setting the shape it already has does nothing.
+    public var cursor: Cursor = .arrow {
+        didSet {
+            if cursor != oldValue {
+                platformCursorChanged()
+            }
+        }
+    }
+
     /// The pointer, as one ordered stream with one consumer.
     ///
     /// Samples are yielded at the moment the platform delivers them, in that order, and none is dropped (the buffer is unbounded). Iterate it
