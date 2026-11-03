@@ -12,7 +12,7 @@ import CoreGraphics
 import Foundation
 import QuartzCore
 
-/// A view that shows a ``CACanvas/Surface`` and reports the pointer.
+/// A view that shows a `CACanvas.Surface` and reports the pointer.
 ///
 /// The view owns the Surface and fills its bounds with it. The host shows items through ``surface`` (`apply(items:overlay:viewport:)`);
 /// this type does not wrap the display. It reads the pointer and answers where things are: ``samples`` is the pointer, ``hit(at:)`` is the
