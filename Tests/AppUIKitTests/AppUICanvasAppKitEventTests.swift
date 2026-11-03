@@ -113,6 +113,76 @@
             #expect(samples.last?.location == CGPoint(x: 40, y: 35))
         }
 
+        @Test(.timeLimit(.minutes(1)))
+        func `a precise scroll with Command held is a scroll that zooms, at the pointer in view points`() async throws {
+            let rig = Rig()
+            let cg = try #require(CGEvent(scrollWheelEvent2Source: nil, units: .pixel, wheelCount: 2, wheel1: -12, wheel2: 5, wheel3: 0))
+            cg.flags = .maskCommand
+            let event = try #require(NSEvent(cgEvent: cg))
+            rig.canvas.scrollWheel(with: event)
+            let step = try #require(await AppUICanvasNavigationFixtures.take(1, from: rig.canvas.navigation).first)
+            guard case let .scroll(dx, dy, precise, zooms, _) = step else {
+                Issue.record("not a scroll: \(step)")
+                return
+            }
+            #expect(zooms)
+            #expect(precise)
+            #expect(dy == event.scrollingDeltaY && dx == event.scrollingDeltaX)
+        }
+
+        @Test(.timeLimit(.minutes(1)))
+        func `a scroll with no modifier does not zoom`() async throws {
+            let rig = Rig()
+            let cg = try #require(CGEvent(scrollWheelEvent2Source: nil, units: .pixel, wheelCount: 2, wheel1: 3, wheel2: 0, wheel3: 0))
+            try rig.canvas.scrollWheel(with: #require(NSEvent(cgEvent: cg)))
+            let step = try #require(await AppUICanvasNavigationFixtures.take(1, from: rig.canvas.navigation).first)
+            guard case let .scroll(_, _, _, zooms, _) = step else {
+                Issue.record("not a scroll: \(step)")
+                return
+            }
+            #expect(!zooms)
+        }
+
+        @Test(.timeLimit(.minutes(1)))
+        func `a modifier key pressed in the middle of a drag is a sample between the drag's samples`() async throws {
+            let rig = Rig()
+            try rig.window.sendEvent(rig.event(.leftMouseDown, at: CGPoint(x: 30, y: 30), time: 1))
+            let flags = try #require(NSEvent.keyEvent(
+                with: .flagsChanged, location: .zero, modifierFlags: [.shift], timestamp: 2, windowNumber: rig.window.windowNumber,
+                context: nil, characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: 56
+            ))
+            rig.canvas.flagsChanged(with: flags)
+            try rig.window.sendEvent(rig.event(.leftMouseDragged, at: CGPoint(x: 40, y: 35), time: 3, flags: [.shift]))
+            let samples = await AppUICanvasFixtures.take(3, from: rig.canvas.samples)
+            #expect(samples.map(\.phase) == [.began, .modifiersChanged, .moved])
+            #expect(samples[1].modifiers == [.shift])
+            #expect(samples[1].location == CGPoint(x: 30, y: 30))
+        }
+
+        @Test(.timeLimit(.minutes(1)))
+        func `a tablet point carries its tilt`() async throws {
+            let source = try #require(CGEventSource(stateID: .privateState))
+            let down = try #require(CGEvent(mouseEventSource: source, mouseType: .leftMouseDown, mouseCursorPosition: .zero, mouseButton: .left))
+            down.setIntegerValueField(.mouseEventSubtype, value: Int64(NSEvent.EventSubtype.tabletPoint.rawValue))
+            down.setDoubleValueField(.tabletEventTiltX, value: 0.5)
+            down.setDoubleValueField(.tabletEventTiltY, value: -0.25)
+            let rig = Rig()
+            try rig.canvas.mouseDown(with: #require(NSEvent(cgEvent: down)))
+            let sample = try #require(await AppUICanvasFixtures.take(1, from: rig.canvas.samples).first)
+            #expect(sample.device == .pencil)
+            // The event stores a tilt in 16 bits (measured: 0.5 reads back 0.49998474), so the error is below one step of 2/65535, 3.1e-5.
+            let tilt = try #require(sample.tilt)
+            #expect(abs(tilt.x - 0.5) < 3.1e-5 && abs(tilt.y + 0.25) < 3.1e-5)
+        }
+
+        @Test
+        func `a mouse has no tilt`() async throws {
+            let rig = Rig()
+            try rig.canvas.mouseDown(with: rig.event(.leftMouseDown, at: .zero, time: 1))
+            let sample = try #require(await AppUICanvasFixtures.take(1, from: rig.canvas.samples).first)
+            #expect(sample.tilt == nil)
+        }
+
         @Test
         func `the Surface takes the scale of the window the canvas is in`() {
             let rig = Rig()

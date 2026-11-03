@@ -13,7 +13,7 @@ struct AppUICanvasSourceTests {
     private static let eventAPIs = [
         "NSEvent", "UIEvent", "UITouch", "AppUIEvent", "AppUITouch", "NSTrackingArea", "AppUITrackingArea", "GestureRecognizer",
         "mouseDown", "mouseUp", "mouseMoved", "mouseDragged", "touchesBegan", "touchesMoved", "touchesEnded", "touchesCancelled",
-        "scrollWheel", "magnify(", "acceptsFirstResponder", "canBecomeFirstResponder",
+        "scrollWheel", "magnify(", "smartMagnify", "flagsChanged", "pressesBegan", "acceptsFirstResponder", "canBecomeFirstResponder",
     ]
 
     private static func canvasFiles() throws -> [URL] {

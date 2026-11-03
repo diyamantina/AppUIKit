@@ -49,6 +49,30 @@
             emit(.hovered, contact(of: event), modifiers: Self.modifiers(of: event))
         }
 
+        /// A two-finger scroll, its momentum, or a wheel: one step each, momentum included, because the system sends the momentum.
+        override func scrollWheel(with event: AppUIEvent) {
+            emit(navigation: .scroll(
+                dx: event.scrollingDeltaX, dy: event.scrollingDeltaY, precise: event.hasPreciseScrollingDeltas,
+                modifiers: Self.modifiers(of: event), at: convert(event.locationInWindow, from: nil)
+            ))
+        }
+
+        /// A pinch step: `magnification` is the change since the last event.
+        override func magnify(with event: AppUIEvent) {
+            emit(navigation: .pinch(magnification: event.magnification, at: convert(event.locationInWindow, from: nil)))
+        }
+
+        /// A two-finger double tap.
+        override func smartMagnify(with event: AppUIEvent) {
+            emit(navigation: .smartZoom(at: convert(event.locationInWindow, from: nil)))
+        }
+
+        /// A modifier key went down or up: reported in the pointer's stream, so Shift pressed in the middle of a drag arrives in its order.
+        override func flagsChanged(with event: AppUIEvent) {
+            emit(modifiers: Self.modifiers(of: event), timestamp: event.timestamp)
+            super.flagsChanged(with: event)
+        }
+
         override func updateTrackingAreas() {
             super.updateTrackingAreas()
             for area in trackingAreas where area.owner === self {
@@ -92,7 +116,8 @@
                 location: convert(event.locationInWindow, from: nil),
                 timestamp: event.timestamp,
                 device: device,
-                force: device == .pencil ? CGFloat(event.pressure) : nil
+                force: device == .pencil ? CGFloat(event.pressure) : nil,
+                tilt: device == .pencil ? event.tilt : nil
             )
         }
 

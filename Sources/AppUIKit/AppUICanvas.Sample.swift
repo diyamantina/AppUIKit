@@ -17,12 +17,16 @@ public extension AppUICanvas {
         public var timestamp: TimeInterval
         /// What made it.
         public var device: Device
-        /// How hard it pressed, for a pen only (0 to 1 on AppKit, `UITouch.force` on UIKit); nil for a mouse and a finger.
+        /// How hard it pressed, for a pen only (0 to 1 on both: AppKit's pressure, and on UIKit the touch's force divided by its maximum possible force); nil for a mouse and a
+        /// finger.
         public var force: CGFloat?
         /// The pen's angle from the glass in radians (0 flat, pi/2 upright), UIKit pen only; nil otherwise.
         public var altitude: CGFloat?
         /// The direction the pen leans, in radians in the view's own coordinates, UIKit pen only; nil otherwise.
         public var azimuth: CGFloat?
+        /// The tablet's tilt components, each from -1 to 1 as AppKit reports them, for a graphics tablet only; nil otherwise. The direction
+        /// convention was not checked against a tablet, so the values are given as they come.
+        public var tilt: CGPoint?
         /// The modifier keys held.
         public var modifiers: Modifiers
         /// True for a sample UIKit folded into an event: the movements since the previous event, which a stroke wants for its shape.
@@ -39,6 +43,7 @@ public extension AppUICanvas {
             force: CGFloat? = nil,
             altitude: CGFloat? = nil,
             azimuth: CGFloat? = nil,
+            tilt: CGPoint? = nil,
             modifiers: Modifiers = [],
             isCoalesced: Bool = false,
             isPredicted: Bool = false
@@ -50,6 +55,7 @@ public extension AppUICanvas {
             self.force = force
             self.altitude = altitude
             self.azimuth = azimuth
+            self.tilt = tilt
             self.modifiers = modifiers
             self.isCoalesced = isCoalesced
             self.isPredicted = isPredicted

@@ -36,9 +36,16 @@ public final class AppUICanvas: AppUITopLeftView {
 
     private let continuation: AsyncStream<Sample>.Continuation
 
-    /// The identity of the platform object whose contact is down (a `UITouch` on UIKit), so the other contacts of a multi-finger event are
-    /// not mixed into the stream. nil when no contact is down.
-    var contactToken: ObjectIdentifier?
+    /// Which contact draws (a `UITouch` on UIKit), so the other contacts of a multi-finger event are not mixed into the stream, and a second
+    /// one turns the gesture into a navigation.
+    var tracker = ContactTracker<ObjectIdentifier>()
+    /// The steps of a change of view (scroll, pinch, smart zoom), in the order the platform delivered them, with one consumer like ``samples``.
+    public let navigation: AsyncStream<Navigation>
+    private let navigationContinuation: AsyncStream<Navigation>.Continuation
+    /// Where the pointer was last, so a change of modifier keys has a place.
+    private var lastLocation = CGPoint.zero
+    /// The modifier keys of the last report, so only a change is reported.
+    private var lastModifiers: Modifiers = []
 
     /// The last sample made, kept so a cancel can say where the contact was.
     private var lastDown: (contact: Contact, modifiers: Modifiers)?
@@ -48,6 +55,9 @@ public final class AppUICanvas: AppUITopLeftView {
         let pair = AsyncStream.makeStream(of: Sample.self, bufferingPolicy: .unbounded)
         samples = pair.stream
         continuation = pair.continuation
+        let steps = AsyncStream.makeStream(of: Navigation.self, bufferingPolicy: .unbounded)
+        navigation = steps.stream
+        navigationContinuation = steps.continuation
         super.init(frame: .zero)
         backingLayer.addSublayer(surface)
         installPlatformInput()
@@ -61,6 +71,7 @@ public final class AppUICanvas: AppUITopLeftView {
 
     deinit {
         continuation.finish()
+        navigationContinuation.finish()
     }
 
     // MARK: Where things are
@@ -116,16 +127,32 @@ public final class AppUICanvas: AppUITopLeftView {
             }
         case .ended, .cancelled:
             lastDown = nil
-            contactToken = nil
-        case .hovered:
+        case .hovered, .modifiersChanged:
             break
         }
+        if !sample.isPredicted {
+            lastLocation = sample.location
+        }
+        lastModifiers = sample.modifiers
         continuation.yield(sample)
     }
 
     /// Yields one sample of a contact that is not part of a UIKit event's folded or predicted batch.
     func emit(_ phase: Phase, _ contact: Contact, modifiers: Modifiers) {
         emit(contact.sample(phase, modifiers: modifiers), contact: contact)
+    }
+
+    /// Reports a step of a change of view.
+    func emit(navigation step: Navigation) {
+        navigationContinuation.yield(step)
+    }
+
+    /// Reports the modifier keys when they differ from the last report, as a sample at the pointer's last place, in the same stream as the
+    /// pointer so that a key pressed in the middle of a drag arrives in its order.
+    func emit(modifiers: Modifiers, timestamp: TimeInterval) {
+        guard modifiers != lastModifiers else { return }
+        let contact = Contact(location: lastLocation, timestamp: timestamp, device: .mouse)
+        emit(contact.sample(.modifiersChanged, modifiers: modifiers), contact: contact)
     }
 
     /// Ends a contact the system took away without saying so (the window closed under a drag): a cancel at the last place it was.

@@ -14,8 +14,16 @@
         // MARK: Platform hooks
 
         internal func installPlatformInput() {
-            isMultipleTouchEnabled = false
+            isMultipleTouchEnabled = true
             addGestureRecognizer(AppUIHoverGestureRecognizer(target: self, action: #selector(hovered(_:))))
+            let pinch = AppUIPinchGestureRecognizer(target: self, action: #selector(pinched(_:)))
+            let pan = AppUIPanGestureRecognizer(target: self, action: #selector(panned(_:)))
+            pan.minimumNumberOfTouches = 2
+            pan.allowedScrollTypesMask = .all // an iPad trackpad's two-finger scroll and a mouse wheel pan too
+            for recognizer in [pinch, pan] as [AppUIGestureRecognizer] {
+                recognizer.delegate = self
+                addGestureRecognizer(recognizer)
+            }
         }
 
         internal func platformDisplayScale() -> CGFloat {
@@ -31,25 +39,81 @@
 
         // MARK: Events
 
+        /// The first contact of a sequence draws; a second one cancels it and the gesture becomes a pinch or a pan (see ``ContactTracker``).
         override func touchesBegan(_ touches: Set<AppUITouch>, with event: AppUIEvent?) {
-            guard contactToken == nil, let touch = touches.first else { return }
-            contactToken = ObjectIdentifier(touch)
-            report(.began, of: touch, event: event)
+            let down = event?.allTouches?.count ?? touches.count
+            switch tracker.landed(touches.map { ObjectIdentifier($0) }, downCount: down) {
+            case .begin:
+                if let touch = touches.first {
+                    report(.began, of: touch, event: event)
+                }
+            case .cancel:
+                cancelContactIfDown()
+            default:
+                break
+            }
         }
 
         override func touchesMoved(_ touches: Set<AppUITouch>, with event: AppUIEvent?) {
-            guard let touch = ours(in: touches) else { return }
+            guard tracker.moved(touches.map { ObjectIdentifier($0) }) == .move, let touch = followed(in: touches) else { return }
             report(.moved, of: touch, event: event)
         }
 
         override func touchesEnded(_ touches: Set<AppUITouch>, with event: AppUIEvent?) {
-            guard let touch = ours(in: touches) else { return }
-            report(.ended, of: touch, event: event)
+            finish(touches, event: event, cancelled: false)
         }
 
         override func touchesCancelled(_ touches: Set<AppUITouch>, with event: AppUIEvent?) {
-            guard let touch = ours(in: touches) else { return }
-            report(.cancelled, of: touch, event: event)
+            finish(touches, event: event, cancelled: true)
+        }
+
+        private func finish(_ touches: Set<AppUITouch>, event: AppUIEvent?, cancelled: Bool) {
+            let touch = followed(in: touches)
+            let remaining = (event?.allTouches ?? []).filter { !touches.contains($0) && $0.phase != .ended && $0.phase != .cancelled }.count
+            let action = tracker.lifted(touches.map { ObjectIdentifier($0) }, cancelled: cancelled, remaining: remaining)
+            if let touch, action == .end {
+                report(.ended, of: touch, event: event)
+            } else if let touch, action == .system {
+                report(.cancelled, of: touch, event: event)
+            }
+        }
+
+        // MARK: Navigation and keys
+
+        /// A pinch step: the recognizer's scale is reset to 1 after each, so each step's scale is its factor, about the fingers' centre.
+        @objc private func pinched(_ recognizer: AppUIPinchGestureRecognizer) {
+            guard recognizer.state == .began || recognizer.state == .changed else { return }
+            let factor = recognizer.scale
+            recognizer.scale = 1
+            emit(navigation: .pinch(factor: factor, at: recognizer.location(in: self)))
+        }
+
+        /// A two-finger pan, or an iPad trackpad's scroll: the translation since the last step, reset to zero after each.
+        @objc private func panned(_ recognizer: AppUIPanGestureRecognizer) {
+            guard recognizer.state == .began || recognizer.state == .changed else { return }
+            let delta = recognizer.translation(in: self)
+            recognizer.setTranslation(.zero, in: self)
+            emit(navigation: .scroll(dx: delta.x, dy: delta.y, precise: true, zooms: false, at: recognizer.location(in: self)))
+        }
+
+        override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+            reportKeys(presses)
+            super.pressesBegan(presses, with: event)
+        }
+
+        override func pressesChanged(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+            reportKeys(presses)
+            super.pressesChanged(presses, with: event)
+        }
+
+        override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+            reportKeys(presses)
+            super.pressesEnded(presses, with: event)
+        }
+
+        private func reportKeys(_ presses: Set<UIPress>) {
+            guard let key = presses.compactMap(\.key).first else { return }
+            emit(modifiers: Self.modifiers(of: key.modifierFlags), timestamp: ProcessInfo.processInfo.systemUptime)
         }
 
         @objc private func hovered(_ recognizer: AppUIHoverGestureRecognizer) {
@@ -70,8 +134,8 @@
 
         // MARK: Reading a touch
 
-        private func ours(in touches: Set<AppUITouch>) -> AppUITouch? {
-            guard let token = contactToken else { return nil }
+        private func followed(in touches: Set<AppUITouch>) -> AppUITouch? {
+            guard let token = tracker.current else { return nil }
             return touches.first { ObjectIdentifier($0) == token }
         }
 
@@ -104,7 +168,7 @@
                 location: touch.location(in: self),
                 timestamp: touch.timestamp,
                 device: device,
-                force: isPen ? touch.force : nil,
+                force: isPen ? Contact.normalizedForce(touch.force, maximum: touch.maximumPossibleForce) : nil,
                 altitude: isPen ? touch.altitudeAngle : nil,
                 azimuth: isPen ? touch.azimuthAngle(in: self) : nil
             )
@@ -131,6 +195,13 @@
                 result.insert(.numericPad)
             }
             return result
+        }
+    }
+
+    extension AppUICanvas: AppUIGestureRecognizerDelegate {
+        /// The pinch and the two-finger pan recognize together, so a pinch that moves pans as it zooms; the hover recognizer stands alone.
+        public func gestureRecognizer(_ gestureRecognizer: AppUIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: AppUIGestureRecognizer) -> Bool {
+            !(gestureRecognizer is AppUIHoverGestureRecognizer) && !(other is AppUIHoverGestureRecognizer)
         }
     }
 #endif

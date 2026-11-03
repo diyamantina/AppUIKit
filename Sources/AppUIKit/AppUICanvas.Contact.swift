@@ -16,6 +16,7 @@ extension AppUICanvas {
         var force: CGFloat?
         var altitude: CGFloat?
         var azimuth: CGFloat?
+        var tilt: CGPoint?
 
         init(
             location: CGPoint,
@@ -23,7 +24,8 @@ extension AppUICanvas {
             device: Device,
             force: CGFloat? = nil,
             altitude: CGFloat? = nil,
-            azimuth: CGFloat? = nil
+            azimuth: CGFloat? = nil,
+            tilt: CGPoint? = nil
         ) {
             self.location = location
             self.timestamp = timestamp
@@ -31,6 +33,13 @@ extension AppUICanvas {
             self.force = force
             self.altitude = altitude
             self.azimuth = azimuth
+            self.tilt = tilt
+        }
+
+        /// A force as a fraction from 0 to 1 of the most the glass can report, or nil when the glass reports none (a maximum of 0 or less).
+        static func normalizedForce(_ force: CGFloat, maximum: CGFloat) -> CGFloat? {
+            guard maximum > 0, force.isFinite else { return nil }
+            return min(max(force / maximum, 0), 1)
         }
 
         /// The sample this contact makes.
@@ -43,6 +52,7 @@ extension AppUICanvas {
                 force: force,
                 altitude: altitude,
                 azimuth: azimuth,
+                tilt: tilt,
                 modifiers: modifiers,
                 isCoalesced: isCoalesced,
                 isPredicted: isPredicted
