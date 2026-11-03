@@ -15,4 +15,12 @@ public extension AppUIButton {
             }
         #endif
     }
+
+    /// Takes the padding out of the button, so a small image sits in a small frame: the configuration of a UIKit button has insets of its own; an AppKit borderless button has
+    /// none.
+    func appuiRemoveContentInsets() {
+        #if canImport(UIKit) && !(canImport(AppKit) && !targetEnvironment(macCatalyst))
+            configuration?.contentInsets = .zero
+        #endif
+    }
 }

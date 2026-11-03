@@ -75,3 +75,18 @@ struct AppUIButtonMenuTests {
         #expect(button.appuiContentTintColor == .red)
     }
 }
+
+@MainActor
+@Suite("AppUIKit button content insets")
+struct AppUIButtonInsetsTests {
+    @Test func `a borderless button has its padding taken out`() {
+        let button = AppUIButton()
+        button.appuiMakeBorderless()
+        button.appuiRemoveContentInsets()
+        #if canImport(UIKit) && !(canImport(AppKit) && !targetEnvironment(macCatalyst))
+            #expect(button.configuration?.contentInsets == .zero)
+        #else
+            #expect(button.isBordered == false)
+        #endif
+    }
+}
