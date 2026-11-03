@@ -22,12 +22,62 @@
 
         override func resetCursorRects() {
             super.resetCursorRects()
-            switch cursor {
-            case .arrow: break
-            case .openHand: addCursorRect(bounds, cursor: .openHand)
-            case .closedHand: addCursorRect(bounds, cursor: .closedHand)
+            if let native = Self.nativeCursor(cursor) {
+                addCursorRect(bounds, cursor: native)
             }
         }
+
+        /// The system cursor of a shape; `nil` for the arrow, which is what no rectangle gives. The diagonal arrows are the system's frame resize cursors (macOS 15 and later);
+        /// before
+        /// that the crosshair stands in, because the system had no public diagonal arrow.
+        internal static func nativeCursor(_ cursor: Cursor) -> NSCursor? {
+            switch cursor {
+            case .arrow: nil
+            case .openHand: .openHand
+            case .closedHand: .closedHand
+            case .resizeHorizontal: .resizeLeftRight
+            case .resizeVertical: .resizeUpDown
+            case .resizeDiagonalDown:
+                if #available(macOS 15.0, *) {
+                    NSCursor.frameResize(position: .topLeft, directions: .all)
+                } else {
+                    .crosshair
+                }
+            case .resizeDiagonalUp:
+                if #available(macOS 15.0, *) {
+                    NSCursor.frameResize(position: .topRight, directions: .all)
+                } else {
+                    .crosshair
+                }
+            case .rotate: rotateCursor
+            }
+        }
+
+        /// A turn arrow, made once from a system symbol, with its hot spot at its centre.
+        private static let rotateCursor: NSCursor = {
+            let configuration = NSImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+            guard let symbol = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)?.withSymbolConfiguration(configuration)
+            else { return .crosshair }
+            let size = NSSize(width: 22, height: 22)
+            let image = NSImage(size: size, flipped: false) { rect in
+                // A white ring under a black glyph keeps it visible on any colour.
+                let tinted: (NSColor) -> NSImage = { colour in
+                    NSImage(size: symbol.size, flipped: false) { box in
+                        symbol.draw(in: box)
+                        colour.set()
+                        box.fill(using: .sourceAtop)
+                        return true
+                    }
+                }
+                let target = NSRect(x: (rect.width - symbol.size.width) / 2, y: (rect.height - symbol.size.height) / 2, width: symbol.size.width, height: symbol.size.height)
+                for step in [(-1.0, 0.0), (1.0, 0.0), (0.0, -1.0), (0.0, 1.0)] {
+                    tinted(.white).draw(in: target.offsetBy(dx: step.0, dy: step.1))
+                }
+                tinted(.black).draw(in: target)
+                return true
+            }
+            return NSCursor(image: image, hotSpot: NSPoint(x: size.width / 2, y: size.height / 2))
+        }()
 
         internal func platformDisplayScale() -> CGFloat {
             window?.backingScaleFactor ?? 1

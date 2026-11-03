@@ -14,5 +14,15 @@ public extension AppUICanvas {
         case openHand
         /// The closed hand: it is being carried.
         case closedHand
+        /// A double arrow left and right: a side handle that moves an edge across.
+        case resizeHorizontal
+        /// A double arrow up and down: a side handle that moves an edge up or down.
+        case resizeVertical
+        /// A double arrow along the diagonal from the top left to the bottom right: those two corner handles.
+        case resizeDiagonalDown
+        /// A double arrow along the diagonal from the bottom left to the top right: those two corner handles.
+        case resizeDiagonalUp
+        /// A turn: just outside a corner of the selection, where a press rotates it.
+        case rotate
     }
 }
