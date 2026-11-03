@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- The article *Drawing at runtime* in the DocC catalog: implicit animations and the three ways to turn them off, drawing from `draw(_:)` and not from an event handler, dirty rectangles, flattening committed content, the two tiers (the display layers of CAControls below, AppUIKit's interactive wrappers here, and how a wrapper adds events and hit-testing without the display knowing), what costs a frame, the main run loop and responsive scrolling on AppKit, measuring, and what the aliases cover. Each lesson names its WWDC session and transcript lines or Apple documentation page, and says whether it is verified here or stated by its source.
+- `AppUIDrawingAtRuntimeExampleTests`: the article's stroke example, compiled, run and checked by pixels on AppKit, its hit-testing helper (presentation tree, back to the model layer), and `AppUIInteractiveView` reported by AppKit as not compatible with responsive scrolling (it overrides `scrollWheel(with:)`), with `AppUITopLeftView` compatible.
+
 ### Fixed
 
 - `appuiScrollToVisible` on UIKit scrolls again when the layout it makes above the view moves the offset away from the one it set, so a request for lines at the top of a long text, made while the view is far down, ends with those lines in view; it was left at the bottom.

@@ -31,6 +31,14 @@ Reusable controls and editor surfaces are deliberately outside this package.
   view's opacity (`appuiAlpha`) and a stack's insets (`appuiEdgeInsets`).
 - `isAppKit` / `isUIKit` platform flags.
 
+## Drawing at runtime
+
+The article *Drawing at runtime* in the DocC catalog (`Sources/AppUIKit/AppUIKit.docc/DrawingAtRuntime.md`) explains
+how to draw content that changes live on AppKit and UIKit with this layer: turning off the implicit animations of
+the layers you create, drawing from `draw(_:)` and not from an event handler, redrawing only the dirty rectangle,
+flattening committed content, what costs a frame, keeping the main run loop free and scrolling through the scroll
+view, and measuring. Each lesson names its source and whether it has been verified by a test here.
+
 `import AppUIKit` also re-exports the platform UI framework and Core Graphics, so a consumer drawing in a
 control reaches `CGContext` and the rest through `import AppUIKit` alone, with no second import.
 

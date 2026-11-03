@@ -16,6 +16,10 @@ Reusable controls and editor surfaces live downstream, outside this package.
 
 ## Topics
 
+### Articles
+
+- <doc:DrawingAtRuntime>
+
 ### The namespace
 
 - ``AppUIKit/AppUIKit``
