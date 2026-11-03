@@ -29,13 +29,12 @@ AppUIKit.
 - **CAControls, the display tier.** Core Animation layer types that only show: a layer base with its implicit
   actions off, a display layer tree, object layers, handle, selection and guide layers, and helpers for
   hit-testing what is on screen. They take no events and know nothing of AppUIKit, of views or of a model.
-- **AppUIKit, the interactive tier.** AppUIKit depends on CAControls (once it lands) and wraps its layers in views that take
+- **AppUIKit, the interactive tier.** AppUIKit depends on CAControls and wraps its layers in views that take
   events, such as a canvas view. The wrapper owns the view, the events and the mapping from what was hit to what
   it means; the layers stay display only.
 
-> Note: To be completed. When CAControls and AppUIKit's wrappers land, this section names their types and links
-> their reference pages, and they are the recommended way to do what this article explains. The reference stays
-> on those pages; this article explains why the types are built the way they are.
+The first wrapper is ``AppUICanvas``, over the canvas surface of CAControls; <doc:TheCanvasView> says what it does and where
+its limits are. This article explains why the types are built the way they are.
 
 ### How a wrapper adds events and hit-testing to a display layer
 

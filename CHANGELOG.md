@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `AppUICanvas`, slice 1: one layer-backed view that hosts one `CACanvas.Surface` (the new dependency on the `CAControls` package, tracked by its `main` branch, nothing pinned) and reports the pointer as `samples`, one ordered `AsyncStream` of `AppUICanvas.Sample` (phase, location in the view's top-left points, timestamp, device, optional force, altitude and azimuth, modifier keys, coalesced and predicted flags). The samples are yielded synchronously from the event handlers, so the order the platform delivers is the order the consumer sees, and none is dropped. On UIKit the samples of one event come as the coalesced touches, the event's own touch, then the predicted touches. `hit(at:)` answers a mark first, then the items topmost first, then none. The display scale follows the window and calls `settleScale()`; layout sizes the surface with actions off. The AppKit and UIKit input forks are one file each. A gate test reads the sources and holds that no other canvas file names an event API or a platform conditional. Not in this slice: zoom and pan, accessibility elements, text editing. Held on the Mac by synthesized mouse and tablet events sent through a window, 500 events with a slow consumer (and a task-per-event control that reorders), hit tests at zoom 2.5 under a pan, and a headless render stage showing no animation after a resize (a plain layer is the control).
+- The article *The canvas view* in the DocC catalog.
+
 ### Documentation
 
 - The article *Drawing at runtime* in the DocC catalog: implicit animations and the three ways to turn them off, drawing from `draw(_:)` and not from an event handler, dirty rectangles, flattening committed content, the two tiers (the display layers of CAControls below, AppUIKit's interactive wrappers here, and how a wrapper adds events and hit-testing without the display knowing), what costs a frame, the main run loop and responsive scrolling on AppKit, measuring, and what the aliases cover. Each lesson names its WWDC session and transcript lines or Apple documentation page, and says whether it is verified here or stated by its source.

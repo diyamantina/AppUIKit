@@ -31,6 +31,10 @@ Reusable controls and editor surfaces are deliberately outside this package.
   view's opacity (`appuiAlpha`) and a stack's insets (`appuiEdgeInsets`).
 - `isAppKit` / `isUIKit` platform flags.
 
+## The canvas view
+
+`AppUICanvas` is one layer-backed view that hosts a `CACanvas.Surface` (from the sibling CAControls package, which only displays) and reports what a person does to it: `samples`, one ordered stream of pointer samples (mouse, finger, pen; coalesced and predicted touches on UIKit, in that order), and `hit(at:)`, which answers a handle first and then the items under a point. The display scale follows the window and layout sizes the surface without animation. The article *The canvas view* in the DocC catalog has the rules and the limits.
+
 ## Drawing at runtime
 
 The article *Drawing at runtime* in the DocC catalog (`Sources/AppUIKit/AppUIKit.docc/DrawingAtRuntime.md`) explains

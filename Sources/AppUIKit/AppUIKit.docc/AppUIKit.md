@@ -19,6 +19,7 @@ Reusable controls and editor surfaces live downstream, outside this package.
 ### Articles
 
 - <doc:DrawingAtRuntime>
+- <doc:TheCanvasView>
 
 ### The namespace
 
@@ -36,6 +37,15 @@ Reusable controls and editor surfaces live downstream, outside this package.
 - ``AppUIBezierPath``
 - ``AppUIEdgeInsets``
 - ``AppUILayoutConstraint``
+
+### The canvas view
+
+- ``AppUICanvas``
+- ``AppUICanvas/Sample``
+- ``AppUICanvas/Phase``
+- ``AppUICanvas/Device``
+- ``AppUICanvas/Modifiers``
+- ``AppUICanvas/Hit``
 
 ### Views and cursors
 
