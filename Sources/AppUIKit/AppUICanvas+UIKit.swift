@@ -24,6 +24,13 @@
                 recognizer.delegate = self
                 addGestureRecognizer(recognizer)
             }
+            // Two, three and four fingers tapping are commands, as in Procreate: undo, redo, the interface.
+            for command in Command.allCases {
+                let tap = AppUITapGestureRecognizer(target: self, action: #selector(multiTapped(_:)))
+                tap.numberOfTouchesRequired = command.fingers
+                tap.delegate = self
+                addGestureRecognizer(tap)
+            }
         }
 
         internal func platformDisplayScale() -> CGFloat {
@@ -41,6 +48,11 @@
 
         /// The first contact of a sequence draws; a second one cancels it and the gesture becomes a pinch or a pan (see ``ContactTracker``).
         override func touchesBegan(_ touches: Set<AppUITouch>, with event: AppUIEvent?) {
+            // With Space held (a hardware keyboard, and a pointer or a finger) a drag pans, as on the Mac.
+            if isSpaceHeld, let touch = touches.first {
+                panAnchor = touch.location(in: self)
+                return
+            }
             let down = event?.allTouches?.count ?? touches.count
             switch tracker.landed(touches.map { ObjectIdentifier($0) }, downCount: down) {
             case .begin:
@@ -55,15 +67,26 @@
         }
 
         override func touchesMoved(_ touches: Set<AppUITouch>, with event: AppUIEvent?) {
+            if let anchor = panAnchor, let touch = touches.first {
+                let here = touch.location(in: self)
+                emit(navigation: .scroll(dx: here.x - anchor.x, dy: here.y - anchor.y, precise: true, zooms: false, at: here))
+                panAnchor = here
+                return
+            }
             guard tracker.moved(touches.map { ObjectIdentifier($0) }) == .move, let touch = followed(in: touches) else { return }
             report(.moved, of: touch, event: event)
         }
 
         override func touchesEnded(_ touches: Set<AppUITouch>, with event: AppUIEvent?) {
+            if panAnchor != nil {
+                panAnchor = nil
+                return
+            }
             finish(touches, event: event, cancelled: false)
         }
 
         override func touchesCancelled(_ touches: Set<AppUITouch>, with event: AppUIEvent?) {
+            panAnchor = nil
             finish(touches, event: event, cancelled: true)
         }
 
@@ -96,24 +119,64 @@
             emit(navigation: .scroll(dx: delta.x, dy: delta.y, precise: true, zooms: false, at: recognizer.location(in: self)))
         }
 
+        /// A tap with several fingers: the command of its count.
+        @objc func multiTapped(_ recognizer: AppUITapGestureRecognizer) {
+            guard recognizer.state == .ended, let command = Command(fingers: recognizer.numberOfTouchesRequired) else { return }
+            commandContinuation.yield(command)
+        }
+
         override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-            reportKeys(presses)
+            reportKeys(presses, down: true)
             super.pressesBegan(presses, with: event)
         }
 
         override func pressesChanged(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-            reportKeys(presses)
+            reportKeys(presses, down: true)
             super.pressesChanged(presses, with: event)
         }
 
         override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-            reportKeys(presses)
+            reportKeys(presses, down: false)
             super.pressesEnded(presses, with: event)
         }
 
-        private func reportKeys(_ presses: Set<UIPress>) {
+        override func pressesCancelled(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+            reportKeys(presses, down: false)
+            super.pressesCancelled(presses, with: event)
+        }
+
+        /// The hardware keyboard: the modifier keys as they change, and the keys of the canvas (``Key``) by their HID usage, which does not change with the layout. Space is held
+        /// until it comes up.
+        private func reportKeys(_ presses: Set<UIPress>, down: Bool) {
             guard let key = presses.compactMap(\.key).first else { return }
-            emit(modifiers: Self.modifiers(of: key.modifierFlags), timestamp: ProcessInfo.processInfo.systemUptime)
+            let modifiers = Self.modifiers(of: key.modifierFlags)
+            emit(modifiers: modifiers, timestamp: ProcessInfo.processInfo.systemUptime)
+            guard let kind = Self.keyKind(forHIDUsage: key.keyCode) else { return }
+            if kind == .space {
+                isSpaceHeld = down
+                if !down {
+                    panAnchor = nil
+                }
+                keyContinuation.yield(Key(.space, modifiers: modifiers, isDown: down))
+            } else if down {
+                keyContinuation.yield(Key(kind, modifiers: modifiers, isDown: true))
+            }
+        }
+
+        /// The canvas's key of a hardware key, by its HID usage.
+        static func keyKind(forHIDUsage usage: UIKeyboardHIDUsage) -> KeyKind? {
+            switch usage {
+            case .keyboardLeftArrow: .arrow(.left)
+            case .keyboardRightArrow: .arrow(.right)
+            case .keyboardDownArrow: .arrow(.down)
+            case .keyboardUpArrow: .arrow(.up)
+            case .keyboardDeleteOrBackspace, .keyboardDeleteForward: .delete
+            case .keyboardEscape: .escape
+            case .keyboardTab: .tab
+            case .keyboardReturnOrEnter, .keypadEnter: .return
+            case .keyboardSpacebar: .space
+            default: nil
+            }
         }
 
         @objc private func hovered(_ recognizer: AppUIHoverGestureRecognizer) {

@@ -54,6 +54,9 @@ public final class AppUICanvas: AppUITopLeftView {
     /// The keys that mean an edit or a change of view (``Key``), in the order they were pressed, with one consumer like ``samples``.
     public let keys: AsyncStream<Key>
     let keyContinuation: AsyncStream<Key>.Continuation
+    /// The commands a touch screen's multi-finger taps make (``Command``), in order, with one consumer like ``samples``. A Mac reports none.
+    public let commands: AsyncStream<Command>
+    let commandContinuation: AsyncStream<Command>.Continuation
     /// Whether the space bar is held: a drag then pans the view and reports no sample, as in every drawing app.
     public internal(set) var isSpaceHeld = false
     /// Where a pan by Space and drag was last, in the view's points; `nil` when none is going.
@@ -77,6 +80,9 @@ public final class AppUICanvas: AppUITopLeftView {
         let pressed = AsyncStream.makeStream(of: Key.self, bufferingPolicy: .unbounded)
         keys = pressed.stream
         keyContinuation = pressed.continuation
+        let made = AsyncStream.makeStream(of: Command.self, bufferingPolicy: .unbounded)
+        commands = made.stream
+        commandContinuation = made.continuation
         super.init(frame: .zero)
         backingLayer.addSublayer(surface)
         installPlatformInput()
@@ -92,6 +98,7 @@ public final class AppUICanvas: AppUITopLeftView {
         continuation.finish()
         navigationContinuation.finish()
         keyContinuation.finish()
+        commandContinuation.finish()
     }
 
     // MARK: Where things are
