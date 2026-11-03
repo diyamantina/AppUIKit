@@ -51,6 +51,13 @@ public final class AppUICanvas: AppUITopLeftView {
     /// The steps of a change of view (scroll, pinch, smart zoom), in the order the platform delivered them, with one consumer like ``samples``.
     public let navigation: AsyncStream<Navigation>
     private let navigationContinuation: AsyncStream<Navigation>.Continuation
+    /// The keys that mean an edit or a change of view (``Key``), in the order they were pressed, with one consumer like ``samples``.
+    public let keys: AsyncStream<Key>
+    let keyContinuation: AsyncStream<Key>.Continuation
+    /// Whether the space bar is held: a drag then pans the view and reports no sample, as in every drawing app.
+    public internal(set) var isSpaceHeld = false
+    /// Where a pan by Space and drag was last, in the view's points; `nil` when none is going.
+    var panAnchor: CGPoint?
     /// Where the pointer was last, so a change of modifier keys has a place.
     private var lastLocation = CGPoint.zero
     /// The modifier keys of the last report, so only a change is reported.
@@ -67,6 +74,9 @@ public final class AppUICanvas: AppUITopLeftView {
         let steps = AsyncStream.makeStream(of: Navigation.self, bufferingPolicy: .unbounded)
         navigation = steps.stream
         navigationContinuation = steps.continuation
+        let pressed = AsyncStream.makeStream(of: Key.self, bufferingPolicy: .unbounded)
+        keys = pressed.stream
+        keyContinuation = pressed.continuation
         super.init(frame: .zero)
         backingLayer.addSublayer(surface)
         installPlatformInput()
@@ -81,6 +91,7 @@ public final class AppUICanvas: AppUITopLeftView {
     deinit {
         continuation.finish()
         navigationContinuation.finish()
+        keyContinuation.finish()
     }
 
     // MARK: Where things are

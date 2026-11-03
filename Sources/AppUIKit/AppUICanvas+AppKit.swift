@@ -97,15 +97,98 @@
         // MARK: Events
 
         override func mouseDown(with event: AppUIEvent) {
+            // With Space held a press starts a pan, not a stroke: the pointer is not the tool's.
+            if isSpaceHeld {
+                panAnchor = contact(of: event).location
+                return
+            }
             emit(.began, contact(of: event), modifiers: Self.modifiers(of: event))
         }
 
         override func mouseDragged(with event: AppUIEvent) {
+            if let anchor = panAnchor {
+                let here = contact(of: event).location
+                emit(navigation: .scroll(dx: here.x - anchor.x, dy: here.y - anchor.y, precise: true, zooms: false, at: here))
+                panAnchor = here
+                return
+            }
             emit(.moved, contact(of: event), modifiers: Self.modifiers(of: event))
         }
 
         override func mouseUp(with event: AppUIEvent) {
+            if panAnchor != nil {
+                panAnchor = nil
+                return
+            }
             emit(.ended, contact(of: event), modifiers: Self.modifiers(of: event))
+        }
+
+        /// The middle button pans, as Space and a drag does.
+        override func otherMouseDown(with event: AppUIEvent) {
+            guard event.buttonNumber == 2 else { return super.otherMouseDown(with: event) }
+            panAnchor = contact(of: event).location
+        }
+
+        override func otherMouseDragged(with event: AppUIEvent) {
+            guard event.buttonNumber == 2, let anchor = panAnchor else { return super.otherMouseDragged(with: event) }
+            let here = contact(of: event).location
+            emit(navigation: .scroll(dx: here.x - anchor.x, dy: here.y - anchor.y, precise: true, zooms: false, at: here))
+            panAnchor = here
+        }
+
+        override func otherMouseUp(with event: AppUIEvent) {
+            guard event.buttonNumber == 2 else { return super.otherMouseUp(with: event) }
+            panAnchor = nil
+        }
+
+        // MARK: Keys
+
+        /// The arrows, Delete, Escape, Tab, Return and Space are reported as ``Key`` values; any other key goes on up the responder chain.
+        override func keyDown(with event: AppUIEvent) {
+            guard let kind = Self.keyKind(of: event) else { return super.keyDown(with: event) }
+            let modifiers = Self.modifiers(of: event)
+            if kind == .space {
+                // A held space bar sends repeats: only the first changes anything, and none is a new press.
+                if !event.isARepeat {
+                    isSpaceHeld = true
+                }
+            }
+            keyContinuation.yield(Key(kind, modifiers: modifiers, isDown: true, isRepeat: event.isARepeat))
+        }
+
+        override func keyUp(with event: AppUIEvent) {
+            guard Self.keyKind(of: event) == .space else { return super.keyUp(with: event) }
+            isSpaceHeld = false
+            panAnchor = nil
+            keyContinuation.yield(Key(.space, modifiers: Self.modifiers(of: event), isDown: false))
+        }
+
+        /// A canvas that is no longer the key view cannot see Space come up: it lets go of the pan.
+        override func resignFirstResponder() -> Bool {
+            if isSpaceHeld {
+                isSpaceHeld = false
+                panAnchor = nil
+                keyContinuation.yield(Key(.space, isDown: false))
+            }
+            return super.resignFirstResponder()
+        }
+
+        /// The key of an event, by its hardware code, which does not change with the keyboard layout: 123 to 126 the arrows (left, right, down, up), 51 Delete, 117 forward delete,
+        /// 53 Escape, 48 Tab,
+        /// 36 Return, 76 Enter, 49 Space.
+        static func keyKind(of event: AppUIEvent) -> KeyKind? {
+            switch event.keyCode {
+            case 123: .arrow(.left)
+            case 124: .arrow(.right)
+            case 125: .arrow(.down)
+            case 126: .arrow(.up)
+            case 51, 117: .delete
+            case 53: .escape
+            case 48: .tab
+            case 36, 76: .return
+            case 49: .space
+            default: nil
+            }
         }
 
         override func mouseMoved(with event: AppUIEvent) {
