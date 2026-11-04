@@ -28,5 +28,8 @@ public extension AppUICanvas {
         public static let numericPad = Modifiers(rawValue: 1 << 5)
         /// A function key.
         public static let function = Modifiers(rawValue: 1 << 6)
+        /// The X key is held (Sketch: a drag that starts on a filled layer is a marquee). It is not a modifier key of the keyboard; the canvas adds it to what it reports while the
+        /// key is down.
+        public static let marquee = Modifiers(rawValue: 1 << 7)
     }
 }

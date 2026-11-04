@@ -151,6 +151,13 @@
             guard let key = presses.compactMap(\.key).first else { return }
             let modifiers = Self.modifiers(of: key.modifierFlags)
             emit(modifiers: modifiers, timestamp: ProcessInfo.processInfo.systemUptime)
+            if key.keyCode == .keyboardX {
+                // X is held like Space; Command or Control with it is the system's.
+                if !down || modifiers.isDisjoint(with: [.command, .control]) {
+                    holdMarquee(down, timestamp: ProcessInfo.processInfo.systemUptime)
+                }
+                return
+            }
             guard let kind = Self.keyKind(forHIDUsage: key.keyCode) else { return }
             if kind == .space {
                 isSpaceHeld = down

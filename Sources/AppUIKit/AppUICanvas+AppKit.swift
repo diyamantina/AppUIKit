@@ -145,6 +145,12 @@
 
         /// The arrows, Delete, Escape, Tab, Return and Space are reported as ``Key`` values; any other key goes on up the responder chain.
         override func keyDown(with event: AppUIEvent) {
+            // X is held like Space (Sketch: a drag that starts on a filled layer is then a marquee); Command or Control with it is the system's.
+            if event.keyCode == Self.marqueeKeyCode {
+                guard Self.modifiers(of: event).isDisjoint(with: [.command, .control]) else { return super.keyDown(with: event) }
+                holdMarquee(true, timestamp: event.timestamp)
+                return
+            }
             guard let kind = Self.keyKind(of: event) else { return super.keyDown(with: event) }
             let modifiers = Self.modifiers(of: event)
             if kind == .tilde {
@@ -163,6 +169,10 @@
         }
 
         override func keyUp(with event: AppUIEvent) {
+            if event.keyCode == Self.marqueeKeyCode, isMarqueeHeld {
+                holdMarquee(false, timestamp: event.timestamp)
+                return
+            }
             if Self.keyKind(of: event) == .tilde, isTildeHeld {
                 isTildeHeld = false
                 keyContinuation.yield(Key(.tilde, modifiers: Self.modifiers(of: event), isDown: false))
@@ -192,6 +202,7 @@
                 isTildeHeld = false
                 keyContinuation.yield(Key(.tilde, isDown: false))
             }
+            holdMarquee(false, timestamp: ProcessInfo.processInfo.systemUptime)
             return super.resignFirstResponder()
         }
 
@@ -201,6 +212,9 @@
         static func keyKind(of event: AppUIEvent) -> KeyKind? {
             hardwareKeys[event.keyCode]
         }
+
+        /// The hardware code of the X key.
+        static let marqueeKeyCode: UInt16 = 7
 
         private static let hardwareKeys: [UInt16: KeyKind] = [
             123: .arrow(.left), 124: .arrow(.right), 125: .arrow(.down), 126: .arrow(.up), 51: .delete, 117: .delete, 53: .escape, 48: .tab, 36: .return, 76: .return,

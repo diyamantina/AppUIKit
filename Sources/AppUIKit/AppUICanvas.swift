@@ -61,12 +61,14 @@ public final class AppUICanvas: AppUITopLeftView {
     public internal(set) var isSpaceHeld = false
     /// Whether the tilde key is held (a release is reported when the canvas stops being the key view).
     public internal(set) var isTildeHeld = false
+    /// Whether the X key is held: every report then carries ``Modifiers/marquee`` (a release is reported when the canvas stops being the key view).
+    public internal(set) var isMarqueeHeld = false
     /// Where a pan by Space and drag was last, in the view's points; `nil` when none is going.
     var panAnchor: CGPoint?
     /// Where the pointer was last, so a change of modifier keys has a place.
     var lastLocation = CGPoint.zero
     /// The modifier keys of the last report, so only a change is reported.
-    private var lastModifiers: Modifiers = []
+    var lastModifiers: Modifiers = []
 
     /// The last sample made, kept so a cancel can say where the contact was.
     private var lastDown: (contact: Contact, modifiers: Modifiers)?
@@ -149,6 +151,10 @@ public final class AppUICanvas: AppUITopLeftView {
 
     /// Yields one sample. A contact that ends or is cancelled is forgotten; one that began or moved is remembered for a cancel.
     func emit(_ sample: Sample, contact: Contact) {
+        var sample = sample
+        if isMarqueeHeld {
+            sample.modifiers.insert(.marquee)
+        }
         switch sample.phase {
         case .began, .moved:
             if !sample.isPredicted {
@@ -179,9 +185,18 @@ public final class AppUICanvas: AppUITopLeftView {
     /// Reports the modifier keys when they differ from the last report, as a sample at the pointer's last place, in the same stream as the
     /// pointer so that a key pressed in the middle of a drag arrives in its order.
     func emit(modifiers: Modifiers, timestamp: TimeInterval) {
+        let modifiers = isMarqueeHeld ? modifiers.union(.marquee) : modifiers
         guard modifiers != lastModifiers else { return }
         let contact = Contact(location: lastLocation, timestamp: timestamp, device: .mouse)
         emit(contact.sample(.modifiersChanged, modifiers: modifiers), contact: contact)
+    }
+
+    /// The X key goes down or up: the state changes and the modifiers are reported at the pointer's last place, in the stream's order, so a drag already begun sees it. The same
+    /// state again changes nothing.
+    func holdMarquee(_ held: Bool, timestamp: TimeInterval) {
+        guard held != isMarqueeHeld else { return }
+        isMarqueeHeld = held
+        emit(modifiers: lastModifiers.subtracting(.marquee), timestamp: timestamp)
     }
 
     /// Ends a contact the system took away without saying so (the window closed under a drag): a cancel at the last place it was.
