@@ -298,6 +298,7 @@ public typealias AppUIFileCoordinator = NSFileCoordinator
     public typealias AppUIDropSession = UIDropSession
     public typealias AppUIDropProposal = UIDropProposal
     public typealias AppUIDragItem = UIDragItem
+    public typealias AppUIItemProvider = NSItemProvider
     public typealias AppUIDragSession = UIDragSession
     public typealias AppUITableViewDragDelegate = UITableViewDragDelegate
 
