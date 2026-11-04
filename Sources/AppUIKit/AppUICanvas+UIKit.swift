@@ -202,6 +202,8 @@
             super.didMoveToWindow()
             if window == nil {
                 cancelContactIfDown()
+                // a hardware key that came up while the canvas was away is never seen: X is let go with the window
+                holdMarquee(false, timestamp: ProcessInfo.processInfo.systemUptime)
             }
             refreshDisplayScale()
         }

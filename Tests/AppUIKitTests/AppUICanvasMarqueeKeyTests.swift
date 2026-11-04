@@ -44,7 +44,7 @@
         }
 
         @Test(.timeLimit(.minutes(1)))
-        func `a Command or Control with the key is left to the responder chain, other modifiers are kept beside the bit, and losing the key view lets go`() async throws {
+        func `a Command or Control with the key is left to the responder chain, a Shift with it is the key itself, and losing the key view lets go`() async throws {
             let canvas = AppUICanvasFixtures.canvas()
             try canvas.keyDown(with: key(7, flags: .command))
             try canvas.keyDown(with: key(7, flags: .control))
