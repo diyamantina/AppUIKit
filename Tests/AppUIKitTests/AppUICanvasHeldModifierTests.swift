@@ -54,4 +54,21 @@ struct AppUICanvasHeldModifierTests {
         )
         #expect(found[1].timestamp == 2, "the second report is the keyboard's, not the switch's")
     }
+
+    @Test(.timeLimit(.minutes(1)))
+    func `a switch or X let go after the contact was cancelled is still reported`() async {
+        let canvas = AppUICanvasFixtures.canvas()
+        canvas.holdMarquee(true, timestamp: 1)
+        canvas.heldModifiers = [.shift]
+        canvas.emit(.began, AppUICanvas.Contact(location: CGPoint(x: 5, y: 5), timestamp: 2, device: .touch), modifiers: [])
+        canvas.cancelContactIfDown() // the window went away under the drag
+        canvas.holdMarquee(false, timestamp: 3)
+        canvas.heldModifiers = []
+        let found = await reports(canvas, count: 6)
+        #expect(found.map(\.phase) == [.modifiersChanged, .modifiersChanged, .began, .cancelled, .modifiersChanged, .modifiersChanged])
+        #expect(
+            found.map(\.modifiers) == [[.marquee], [.marquee, .shift], [.marquee, .shift], [.marquee, .shift], [.shift], []],
+            "X let go and then the switch: each is told, though the contact was cancelled in between"
+        )
+    }
 }

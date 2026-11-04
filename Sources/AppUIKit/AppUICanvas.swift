@@ -168,12 +168,15 @@ public final class AppUICanvas: AppUITopLeftView {
     /// Yields one sample. A contact that ends or is cancelled is forgotten; one that began or moved is remembered for a cancel.
     func emit(_ sample: Sample, contact: Contact) {
         var sample = sample
-        lastPlatformModifiers = sample.modifiers
+        let platform = sample.modifiers
+        lastPlatformModifiers = platform
         sample.modifiers.formUnion(foldedModifiers)
         switch sample.phase {
         case .began, .moved:
             if !sample.isPredicted {
-                lastDown = (contact, sample.modifiers)
+                // the keys of the event, not those it carried with the held ones: a cancel gives them to `emit` again, which adds the held keys of that moment, and takes them for
+                // the keyboard's if they are in
+                lastDown = (contact, platform)
             }
         case .ended, .cancelled:
             lastDown = nil
