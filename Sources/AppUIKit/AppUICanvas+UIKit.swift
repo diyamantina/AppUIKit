@@ -17,10 +17,11 @@
             isMultipleTouchEnabled = true
             addGestureRecognizer(AppUIHoverGestureRecognizer(target: self, action: #selector(hovered(_:))))
             let pinch = AppUIPinchGestureRecognizer(target: self, action: #selector(pinched(_:)))
+            let twist = AppUIRotationGestureRecognizer(target: self, action: #selector(twisted(_:)))
             let pan = AppUIPanGestureRecognizer(target: self, action: #selector(panned(_:)))
             pan.minimumNumberOfTouches = 2
             pan.allowedScrollTypesMask = .all // an iPad trackpad's two-finger scroll and a mouse wheel pan too
-            for recognizer in [pinch, pan] as [AppUIGestureRecognizer] {
+            for recognizer in [pinch, twist, pan] as [AppUIGestureRecognizer] {
                 recognizer.delegate = self
                 addGestureRecognizer(recognizer)
             }
@@ -118,6 +119,21 @@
             let factor = recognizer.scale
             recognizer.scale = 1
             emit(navigation: .pinch(factor: factor, at: recognizer.location(in: self)))
+        }
+
+        /// A twist step: the recognizer's rotation (radians, clockwise positive on the screen) is reset to 0 after each, about the fingers' centre; the fingers lifting settles the
+        /// turn.
+        @objc private func twisted(_ recognizer: AppUIRotationGestureRecognizer) {
+            switch recognizer.state {
+            case .began, .changed:
+                let angle = recognizer.rotation
+                recognizer.rotation = 0
+                emit(navigation: .twist(radians: angle, at: recognizer.location(in: self)))
+            case .ended, .cancelled:
+                emit(navigation: .settleTurn)
+            default:
+                break
+            }
         }
 
         /// A two-finger pan, or an iPad trackpad's scroll: the translation since the last step, reset to zero after each.

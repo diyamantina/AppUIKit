@@ -238,6 +238,16 @@
             emit(navigation: .pinch(magnification: event.magnification, at: convert(event.locationInWindow, from: nil)))
         }
 
+        /// A twist step: AppKit reports the change in degrees, counterclockwise positive, so the step is negated to be clockwise positive as the other platform's.
+        override func rotate(with event: AppUIEvent) {
+            switch event.phase {
+            case .ended, .cancelled:
+                emit(navigation: .settleTurn)
+            default:
+                emit(navigation: .twist(radians: CGFloat(-Double(event.rotation) * Double.pi / 180), at: convert(event.locationInWindow, from: nil)))
+            }
+        }
+
         /// A two-finger double tap.
         override func smartMagnify(with event: AppUIEvent) {
             emit(navigation: .smartZoom(at: convert(event.locationInWindow, from: nil)))

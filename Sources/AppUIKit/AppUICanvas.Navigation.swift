@@ -3,6 +3,7 @@
 //  AppUIKit
 //
 import CoreGraphics
+import Foundation
 
 public extension AppUICanvas {
     /// One step of a change of view that a trackpad, a wheel or two fingers ask for, in the view's own points with the origin at the top left.
@@ -17,10 +18,19 @@ public extension AppUICanvas {
         case pinch(factor: CGFloat, at: CGPoint)
         /// A smart zoom (a two-finger double tap) at a point.
         case smartZoom(at: CGPoint)
+        /// A twist step: the turn of this step as a unit vector (clockwise on the screen is positive), about the fingers' centre.
+        case turn(cosine: CGFloat, sine: CGFloat, at: CGPoint)
+        /// The fingers lifted after a twist: the host settles the turn (snaps it to a quarter turn when close).
+        case settleTurn
 
         /// A scroll with `zooms` read from the modifier keys: Command or Option held.
         public static func scroll(dx: CGFloat, dy: CGFloat, precise: Bool, modifiers: Modifiers, at point: CGPoint) -> Navigation {
             .scroll(dx: dx, dy: dy, precise: precise, zooms: !modifiers.isDisjoint(with: [.command, .option]), at: point)
+        }
+
+        /// A twist step from a platform's angle, in radians, clockwise on the screen positive: the unit vector of the angle.
+        public static func twist(radians: CGFloat, at point: CGPoint) -> Navigation {
+            .turn(cosine: CGFloat(cos(Double(radians))), sine: CGFloat(sin(Double(radians))), at: point)
         }
 
         /// A pinch step from a platform's change of magnification since the last step: the factor is `1 + magnification`.

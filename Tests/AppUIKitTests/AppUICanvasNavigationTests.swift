@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 import Testing
 @testable import AppUIKit
 
@@ -33,6 +34,19 @@ struct AppUICanvasNavigationTests {
         #expect(Canvas.Navigation.pinch(magnification: 0.25, at: .zero) == .pinch(factor: 1.25, at: .zero))
         #expect(Canvas.Navigation.pinch(magnification: 0, at: .zero) == .pinch(factor: 1, at: .zero))
         #expect(Canvas.Navigation.pinch(magnification: -0.5, at: .zero) == .pinch(factor: 0.5, at: .zero))
+    }
+
+    @Test
+    func `a twist step is the unit vector of its angle, clockwise positive`() {
+        for radians in [0.0, 0.3, -0.3, Double.pi / 2, Double.pi, -2.5] {
+            guard case let .turn(cosine, sine, point) = Canvas.Navigation.twist(radians: CGFloat(radians), at: CGPoint(x: 5, y: 6)) else {
+                Issue.record("not a turn step")
+                continue
+            }
+            #expect(abs(Double(cosine) - Foundation.cos(radians)) < 1e-12 && abs(Double(sine) - Foundation.sin(radians)) < 1e-12 && point == CGPoint(x: 5, y: 6), "\(radians)")
+            #expect(abs(Double(cosine * cosine + sine * sine) - 1) < 1e-6, "unit length at \(radians)")
+        }
+        #expect(Canvas.Navigation.twist(radians: 0, at: .zero) == .turn(cosine: 1, sine: 0, at: .zero), "no angle is exactly upright")
     }
 
     @Test(.timeLimit(.minutes(1)))
