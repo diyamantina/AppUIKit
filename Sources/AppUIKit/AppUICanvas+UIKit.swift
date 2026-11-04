@@ -46,7 +46,8 @@
 
         // MARK: Events
 
-        /// The first contact of a sequence draws; a second one cancels it and the gesture becomes a pinch or a pan (see ``ContactTracker``).
+        /// The first contact of a sequence draws; a second one cancels it and the gesture becomes a pinch or a pan, unless it is the pencil, which draws whatever fingers are down
+        /// (see ``ContactTracker``).
         override func touchesBegan(_ touches: Set<AppUITouch>, with event: AppUIEvent?) {
             // With Space held (a hardware keyboard, and a pointer or a finger) a drag pans, as on the Mac.
             if isSpaceHeld, let touch = touches.first {
@@ -54,9 +55,17 @@
                 return
             }
             let down = event?.allTouches?.count ?? touches.count
-            switch tracker.landed(touches.map { ObjectIdentifier($0) }, downCount: down) {
+            let pencil = touches.filter { $0.type == .pencil }
+            let stylus = Set(pencil.map { ObjectIdentifier($0) })
+            switch tracker.landed(touches.map { ObjectIdentifier($0) }, downCount: down, pencil: stylus) {
             case .begin:
-                if let touch = touches.first {
+                if let touch = pencil.first ?? touches.first {
+                    report(.began, of: touch, event: event)
+                }
+            case .replace:
+                // the pencil took over from a finger that was drawing: the finger's stroke was a resting hand
+                cancelContactIfDown()
+                if let touch = pencil.first {
                     report(.began, of: touch, event: event)
                 }
             case .cancel:
