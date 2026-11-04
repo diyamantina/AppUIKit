@@ -147,6 +147,12 @@
         override func keyDown(with event: AppUIEvent) {
             guard let kind = Self.keyKind(of: event) else { return super.keyDown(with: event) }
             let modifiers = Self.modifiers(of: event)
+            if kind == .tilde {
+                // Command or Control with the grave key is the system's (cycle windows): left to the chain.
+                guard modifiers.isDisjoint(with: [.command, .control]) else { return super.keyDown(with: event) }
+                pressTilde(modifiers: modifiers, isRepeat: event.isARepeat)
+                return
+            }
             if kind == .space {
                 // A held space bar sends repeats: only the first changes anything, and none is a new press.
                 if !event.isARepeat {
@@ -157,10 +163,22 @@
         }
 
         override func keyUp(with event: AppUIEvent) {
+            if Self.keyKind(of: event) == .tilde, isTildeHeld {
+                isTildeHeld = false
+                keyContinuation.yield(Key(.tilde, modifiers: Self.modifiers(of: event), isDown: false))
+                return
+            }
             guard Self.keyKind(of: event) == .space else { return super.keyUp(with: event) }
             isSpaceHeld = false
             panAnchor = nil
             keyContinuation.yield(Key(.space, modifiers: Self.modifiers(of: event), isDown: false))
+        }
+
+        /// A held tilde key sends repeats; only the first is a press.
+        private func pressTilde(modifiers: Modifiers, isRepeat: Bool) {
+            guard !isRepeat else { return }
+            isTildeHeld = true
+            keyContinuation.yield(Key(.tilde, modifiers: modifiers, isDown: true, location: lastLocation))
         }
 
         /// A canvas that is no longer the key view cannot see Space come up: it lets go of the pan.
@@ -170,26 +188,24 @@
                 panAnchor = nil
                 keyContinuation.yield(Key(.space, isDown: false))
             }
+            if isTildeHeld {
+                isTildeHeld = false
+                keyContinuation.yield(Key(.tilde, isDown: false))
+            }
             return super.resignFirstResponder()
         }
 
         /// The key of an event, by its hardware code, which does not change with the keyboard layout: 123 to 126 the arrows (left, right, down, up), 51 Delete, 117 forward delete,
         /// 53 Escape, 48 Tab,
-        /// 36 Return, 76 Enter, 49 Space.
+        /// 36 Return, 76 Enter, 49 Space, 50 the grave accent and tilde.
         static func keyKind(of event: AppUIEvent) -> KeyKind? {
-            switch event.keyCode {
-            case 123: .arrow(.left)
-            case 124: .arrow(.right)
-            case 125: .arrow(.down)
-            case 126: .arrow(.up)
-            case 51, 117: .delete
-            case 53: .escape
-            case 48: .tab
-            case 36, 76: .return
-            case 49: .space
-            default: nil
-            }
+            hardwareKeys[event.keyCode]
         }
+
+        private static let hardwareKeys: [UInt16: KeyKind] = [
+            123: .arrow(.left), 124: .arrow(.right), 125: .arrow(.down), 126: .arrow(.up), 51: .delete, 117: .delete, 53: .escape, 48: .tab, 36: .return, 76: .return,
+            49: .space, 50: .tilde,
+        ]
 
         override func mouseMoved(with event: AppUIEvent) {
             emit(.hovered, contact(of: event), modifiers: Self.modifiers(of: event))

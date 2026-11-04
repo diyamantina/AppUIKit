@@ -23,7 +23,7 @@
                 .arrow(.up)
             ),
             (.keyboardDeleteOrBackspace, .delete), (.keyboardDeleteForward, .delete), (.keyboardEscape, .escape), (.keyboardTab, .tab),
-            (.keyboardReturnOrEnter, .return), (.keypadEnter, .return), (.keyboardSpacebar, .space),
+            (.keyboardReturnOrEnter, .return), (.keypadEnter, .return), (.keyboardSpacebar, .space), (.keyboardGraveAccentAndTilde, .tilde),
         ])
         func `a HID usage is the key it names`(usage: UIKeyboardHIDUsage, kind: AppUICanvas.KeyKind) {
             #expect(AppUICanvas.keyKind(forHIDUsage: usage) == kind)

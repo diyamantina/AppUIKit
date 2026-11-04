@@ -15,5 +15,7 @@ public extension AppUICanvas {
         case `return`
         /// The space bar.
         case space
+        /// The grave accent and tilde key, held: Sketch shows the canvas at 100% while it is down.
+        case tilde
     }
 }

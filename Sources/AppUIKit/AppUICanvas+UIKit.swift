@@ -158,26 +158,30 @@
                     panAnchor = nil
                 }
                 keyContinuation.yield(Key(.space, modifiers: modifiers, isDown: down))
+            } else if kind == .tilde {
+                reportTilde(down: down, modifiers: modifiers)
             } else if down {
                 keyContinuation.yield(Key(kind, modifiers: modifiers, isDown: true))
             }
         }
 
+        /// The tilde key: held until it comes up, with Command or Control left to the system.
+        private func reportTilde(down: Bool, modifiers: Modifiers) {
+            guard modifiers.isDisjoint(with: [.command, .control]) || !down, down != isTildeHeld else { return }
+            isTildeHeld = down
+            keyContinuation.yield(Key(.tilde, modifiers: modifiers, isDown: down, location: down ? lastLocation : nil))
+        }
+
         /// The canvas's key of a hardware key, by its HID usage.
         static func keyKind(forHIDUsage usage: UIKeyboardHIDUsage) -> KeyKind? {
-            switch usage {
-            case .keyboardLeftArrow: .arrow(.left)
-            case .keyboardRightArrow: .arrow(.right)
-            case .keyboardDownArrow: .arrow(.down)
-            case .keyboardUpArrow: .arrow(.up)
-            case .keyboardDeleteOrBackspace, .keyboardDeleteForward: .delete
-            case .keyboardEscape: .escape
-            case .keyboardTab: .tab
-            case .keyboardReturnOrEnter, .keypadEnter: .return
-            case .keyboardSpacebar: .space
-            default: nil
-            }
+            hidKeys[usage]
         }
+
+        private static let hidKeys: [UIKeyboardHIDUsage: KeyKind] = [
+            .keyboardLeftArrow: .arrow(.left), .keyboardRightArrow: .arrow(.right), .keyboardDownArrow: .arrow(.down), .keyboardUpArrow: .arrow(.up),
+            .keyboardDeleteOrBackspace: .delete, .keyboardDeleteForward: .delete, .keyboardEscape: .escape, .keyboardTab: .tab,
+            .keyboardReturnOrEnter: .return, .keypadEnter: .return, .keyboardSpacebar: .space, .keyboardGraveAccentAndTilde: .tilde,
+        ]
 
         @objc private func hovered(_ recognizer: AppUIHoverGestureRecognizer) {
             guard recognizer.state == .changed || recognizer.state == .began else { return }

@@ -13,17 +13,21 @@ public extension AppUICanvas {
         public var kind: KeyKind
         /// The modifier keys held.
         public var modifiers: Modifiers
-        /// Whether the key went down (`true`) or came up. Only Space reports its release, because it is held; the others report a press, and each repeat of a held key is a press.
+        /// Whether the key went down (`true`) or came up. Only Space and the tilde key report their release, because it is held; the others report a press, and each repeat of a
+        /// held key is a press.
         public var isDown: Bool
         /// Whether the press is the system's repeat of a key that is being held.
         public var isRepeat: Bool
+        /// Where the pointer was in the view's points when the key was pressed, for the keys that act about it (the tilde zoom); `nil` for the others.
+        public var location: CGPoint?
 
         /// A key.
-        public init(_ kind: KeyKind, modifiers: Modifiers = [], isDown: Bool = true, isRepeat: Bool = false) {
+        public init(_ kind: KeyKind, modifiers: Modifiers = [], isDown: Bool = true, isRepeat: Bool = false, location: CGPoint? = nil) {
             self.kind = kind
             self.modifiers = modifiers
             self.isDown = isDown
             self.isRepeat = isRepeat
+            self.location = location
         }
     }
 }

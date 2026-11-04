@@ -59,10 +59,12 @@ public final class AppUICanvas: AppUITopLeftView {
     let commandContinuation: AsyncStream<Command>.Continuation
     /// Whether the space bar is held: a drag then pans the view and reports no sample, as in every drawing app.
     public internal(set) var isSpaceHeld = false
+    /// Whether the tilde key is held (a release is reported when the canvas stops being the key view).
+    public internal(set) var isTildeHeld = false
     /// Where a pan by Space and drag was last, in the view's points; `nil` when none is going.
     var panAnchor: CGPoint?
     /// Where the pointer was last, so a change of modifier keys has a place.
-    private var lastLocation = CGPoint.zero
+    var lastLocation = CGPoint.zero
     /// The modifier keys of the last report, so only a change is reported.
     private var lastModifiers: Modifiers = []
 

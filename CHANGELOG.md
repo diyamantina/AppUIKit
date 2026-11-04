@@ -237,3 +237,4 @@ UIKit UI code.
 - `isAppKit` / `isUIKit` platform flags, and a re-export of the platform UI framework.
 - Adopted the `rules-swift` enforcement set (`.swiftformat`, `.swiftlint.yml`,
   `.githooks/`).
+- `AppUICanvas.KeyKind.tilde`: the grave accent and tilde key, held like Space; a press carries the pointer's place (`Key.location`), the release is reported, Command or Control with it is left to the system. AppKit code 50, UIKit HID usage.
