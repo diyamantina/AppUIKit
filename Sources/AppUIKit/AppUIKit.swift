@@ -158,6 +158,8 @@ public typealias AppUIFileCoordinator = NSFileCoordinator
     // Pasteboard.
     public typealias AppUIPasteboard = NSPasteboard
     public typealias AppUIPasteboardItem = NSPasteboardItem
+    public typealias AppUIPasteboardWriting = NSPasteboardWriting
+    public typealias AppUIPasteboardType = NSPasteboard.PasteboardType
 
     /// Visual effects.
     public typealias AppUIVisualEffectView = NSVisualEffectView
@@ -295,6 +297,9 @@ public typealias AppUIFileCoordinator = NSFileCoordinator
     public typealias AppUIDropInteractionDelegate = UIDropInteractionDelegate
     public typealias AppUIDropSession = UIDropSession
     public typealias AppUIDropProposal = UIDropProposal
+    public typealias AppUIDragItem = UIDragItem
+    public typealias AppUIDragSession = UIDragSession
+    public typealias AppUITableViewDragDelegate = UITableViewDragDelegate
 
     // Menu.
     public typealias AppUIMenu = UIMenu
