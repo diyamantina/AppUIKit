@@ -63,12 +63,28 @@ public final class AppUICanvas: AppUITopLeftView {
     public internal(set) var isTildeHeld = false
     /// Whether the X key is held: every report then carries ``Modifiers/marquee`` (a release is reported when the canvas stops being the key view).
     public internal(set) var isMarqueeHeld = false
+    /// Modifier keys a host holds down for the person where there is no keyboard (a touch screen's Uniform and From centre switches): every report then carries them, beside the
+    /// keys of the event, and a change is reported at the
+    /// pointer's last place in the stream's order, like a key.
+    public var heldModifiers: Modifiers = [] {
+        didSet {
+            guard heldModifiers != oldValue else { return }
+            emit(modifiers: lastPlatformModifiers, timestamp: ProcessInfo.processInfo.systemUptime)
+        }
+    }
+
+    /// The keys a report carries on top of the event's own: those the host holds, and X while it is held.
+    var foldedModifiers: Modifiers {
+        isMarqueeHeld ? heldModifiers.union(.marquee) : heldModifiers
+    }
+
     /// Where a pan by Space and drag was last, in the view's points; `nil` when none is going.
     var panAnchor: CGPoint?
     /// Where the pointer was last, so a change of modifier keys has a place.
     var lastLocation = CGPoint.zero
-    /// The modifier keys of the last report, so only a change is reported.
+    /// The modifier keys of the last report, so only a change is reported, and the keys of the last event before the held ones were added to it.
     var lastModifiers: Modifiers = []
+    var lastPlatformModifiers: Modifiers = []
 
     /// The last sample made, kept so a cancel can say where the contact was.
     private var lastDown: (contact: Contact, modifiers: Modifiers)?
@@ -152,9 +168,8 @@ public final class AppUICanvas: AppUITopLeftView {
     /// Yields one sample. A contact that ends or is cancelled is forgotten; one that began or moved is remembered for a cancel.
     func emit(_ sample: Sample, contact: Contact) {
         var sample = sample
-        if isMarqueeHeld {
-            sample.modifiers.insert(.marquee)
-        }
+        lastPlatformModifiers = sample.modifiers
+        sample.modifiers.formUnion(foldedModifiers)
         switch sample.phase {
         case .began, .moved:
             if !sample.isPredicted {
@@ -185,8 +200,8 @@ public final class AppUICanvas: AppUITopLeftView {
     /// Reports the modifier keys when they differ from the last report, as a sample at the pointer's last place, in the same stream as the
     /// pointer so that a key pressed in the middle of a drag arrives in its order.
     func emit(modifiers: Modifiers, timestamp: TimeInterval) {
-        let modifiers = isMarqueeHeld ? modifiers.union(.marquee) : modifiers
-        guard modifiers != lastModifiers else { return }
+        lastPlatformModifiers = modifiers // the keyboard's own keys, even when nothing changes in what is carried: a switch let go later must not take them away
+        guard modifiers.union(foldedModifiers) != lastModifiers else { return }
         let contact = Contact(location: lastLocation, timestamp: timestamp, device: .mouse)
         emit(contact.sample(.modifiersChanged, modifiers: modifiers), contact: contact)
     }
@@ -196,7 +211,7 @@ public final class AppUICanvas: AppUITopLeftView {
     func holdMarquee(_ held: Bool, timestamp: TimeInterval) {
         guard held != isMarqueeHeld else { return }
         isMarqueeHeld = held
-        emit(modifiers: lastModifiers.subtracting(.marquee), timestamp: timestamp)
+        emit(modifiers: lastPlatformModifiers, timestamp: timestamp)
     }
 
     /// Ends a contact the system took away without saying so (the window closed under a drag): a cancel at the last place it was.
